@@ -14,7 +14,7 @@ interface IProps {
   onSelect: () => void;
 }
 
-export function DoorComponent({ door, wallGeometry, isSelected, onSelect }: IProps) {
+export function Door({ door, wallGeometry, isSelected, onSelect }: IProps) {
   const offsetInCm = toCm(door.offsetFromStart, door.unit);
   const widthInCm = toCm(door.width, door.unit);
 

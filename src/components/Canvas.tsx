@@ -4,11 +4,11 @@ import Konva from 'konva';
 import { useRoom } from '../store/RoomContext';
 import { calculateWallGeometries } from '../utils/geometry';
 import { IWall, Unit } from '../types';
-import { WallComponent } from './canvas/WallComponent';
-import { DoorComponent } from './canvas/DoorComponent';
-import { FurnitureComponent } from './canvas/FurnitureComponent';
-import { EndpointComponent } from './canvas/EndpointComponent';
-import { ArrowButtonKonva } from './canvas/ArrowButtonKonva';
+import { Wall } from './canvas/Wall';
+import { Door } from './canvas/Door';
+import { Furniture } from './canvas/Furniture';
+import { Endpoint } from './canvas/Endpoint';
+import { ArrowButton } from './canvas/ArrowButton';
 import { WallLengthModal } from './WallLengthModal';
 
 const PIXELS_PER_CM = 2;
@@ -229,7 +229,7 @@ export function Canvas() {
       >
         <Layer>
           {Array.from(wallGeometries.values()).map((geometry) => (
-            <WallComponent
+            <Wall
               key={geometry.id}
               geometry={geometry}
               isSelected={state.selectedEntityId === geometry.id && state.selectedEntityType === 'wall'}
@@ -244,7 +244,7 @@ export function Canvas() {
             const wallGeometry = wallGeometries.get(door.wallId);
             if (!wallGeometry) return null;
             return (
-              <DoorComponent
+              <Door
                 key={door.id}
                 door={door}
                 wallGeometry={wallGeometry}
@@ -255,7 +255,7 @@ export function Canvas() {
           })}
 
           {state.room.furniture.map((furniture) => (
-            <FurnitureComponent
+            <Furniture
               key={furniture.id}
               furniture={furniture}
               isSelected={state.selectedEntityId === furniture.id && state.selectedEntityType === 'furniture'}
@@ -266,13 +266,13 @@ export function Canvas() {
 
           {Array.from(wallGeometries.values()).map((geometry) => (
             <React.Fragment key={`endpoints-${geometry.id}`}>
-              <EndpointComponent
+              <Endpoint
                 point={geometry.startPoint}
                 isHovered={hoveredEndpoint?.wallId === geometry.id && !hoveredEndpoint.isEnd}
                 onMouseEnter={() => setHoveredEndpoint({ wallId: geometry.id, isEnd: false })}
                 onMouseLeave={() => setHoveredEndpoint(null)}
               />
-              <EndpointComponent
+              <Endpoint
                 point={geometry.endPoint}
                 isHovered={hoveredEndpoint?.wallId === geometry.id && hoveredEndpoint.isEnd}
                 onMouseEnter={() => setHoveredEndpoint({ wallId: geometry.id, isEnd: true })}
@@ -284,7 +284,7 @@ export function Canvas() {
           {selectedWall && (
             <>
               {freeEndpoints.has(`${selectedWall.id}-start`) && (
-                <EndpointComponent
+                <Endpoint
                   point={selectedWall.startPoint}
                   isFree
                   isSelected={selectedEndpoint?.wallId === selectedWall.id && !selectedEndpoint.isEnd}
@@ -292,7 +292,7 @@ export function Canvas() {
                 />
               )}
               {freeEndpoints.has(`${selectedWall.id}-end`) && (
-                <EndpointComponent
+                <Endpoint
                   point={selectedWall.endPoint}
                   isFree
                   isSelected={selectedEndpoint?.wallId === selectedWall.id && selectedEndpoint.isEnd}
@@ -303,7 +303,7 @@ export function Canvas() {
           )}
 
           {arrowButtonPositions.map((button, index) => (
-            <ArrowButtonKonva
+            <ArrowButton
               key={index}
               x={button.x}
               y={button.y}

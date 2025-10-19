@@ -16,7 +16,7 @@ interface IProps {
   onMouseLeave?: () => void;
 }
 
-export function EndpointComponent({
+export function Endpoint({
   point,
   isFree = false,
   isSelected = false,

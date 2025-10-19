@@ -17,7 +17,7 @@ interface IProps {
   onMouseLeave: () => void;
 }
 
-export function WallComponent({ geometry, isSelected, isHovered, onSelect, onMouseEnter, onMouseLeave }: IProps) {
+export function Wall({ geometry, isSelected, isHovered, onSelect, onMouseEnter, onMouseLeave }: IProps) {
   return (
     <Line
       points={[

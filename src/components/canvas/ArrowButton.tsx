@@ -12,7 +12,7 @@ interface IProps {
   onClick: () => void;
 }
 
-export function ArrowButtonKonva({ x, y, angle, size, onClick }: IProps) {
+export function ArrowButton({ x, y, angle, size, onClick }: IProps) {
   return (
     <Group x={x} y={y} rotation={angle}>
       <Circle

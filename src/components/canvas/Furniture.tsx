@@ -13,7 +13,7 @@ interface IProps {
   onDragEnd: (x: number, y: number) => void;
 }
 
-export function FurnitureComponent({ furniture, isSelected, onSelect, onDragEnd }: IProps) {
+export function Furniture({ furniture, isSelected, onSelect, onDragEnd }: IProps) {
   const widthInCm = toCm(furniture.width, furniture.unit);
   const heightInCm = toCm(furniture.height, furniture.unit);
 
