@@ -19,8 +19,6 @@ export function Canvas() {
   const { state, dispatch } = useRoom();
   const stageRef = useRef<Konva.Stage>(null);
   const [hoveredWallId, setHoveredWallId] = useState<string | null>(null);
-  const [hoveredEndpoint, setHoveredEndpoint] = useState<{ wallId: string; isEnd: boolean } | null>(null);
-  const [selectedEndpoint, setSelectedEndpoint] = useState<{ wallId: string; isEnd: boolean } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingWallAngle, setPendingWallAngle] = useState<number>(0);
   const [pendingPreviousWallId, setPendingPreviousWallId] = useState<string | null>(null);
@@ -65,37 +63,59 @@ export function Canvas() {
   }, [state.room.walls, wallGeometries]);
 
   function getArrowButtonPositions() {
-    if (!selectedEndpoint) return [];
+    const activeWallId = state.selectedEntityType === 'wall' && state.selectedEntityId
+      ? state.selectedEntityId
+      : hoveredWallId;
 
-    const wall = wallGeometries.get(selectedEndpoint.wallId);
+    if (!activeWallId) return [];
+
+    const wall = wallGeometries.get(activeWallId);
     if (!wall) return [];
 
-    const point = selectedEndpoint.isEnd ? wall.endPoint : wall.startPoint;
     const wallAngle = wall.angle;
-
     const perpendicularAngle1 = wallAngle + 90;
     const perpendicularAngle2 = wallAngle - 90;
 
-    const buttons = [];
+    const buttons: Array<{ x: number; y: number; angle: number; wallAngle: number; wallId: string; isEnd: boolean }> = [];
 
-    for (const angle of [perpendicularAngle1, perpendicularAngle2]) {
-      const angleRad = (angle * Math.PI) / 180;
-      const centerX = point.x + (ARROW_BUTTON_DISTANCE / PIXELS_PER_CM) * Math.cos(angleRad);
-      const centerY = point.y + (ARROW_BUTTON_DISTANCE / PIXELS_PER_CM) * Math.sin(angleRad);
+    if (freeEndpoints.has(`${activeWallId}-start`)) {
+      for (const angle of [perpendicularAngle1, perpendicularAngle2]) {
+        const angleRad = (angle * Math.PI) / 180;
+        const centerX = wall.startPoint.x + (ARROW_BUTTON_DISTANCE / PIXELS_PER_CM) * Math.cos(angleRad);
+        const centerY = wall.startPoint.y + (ARROW_BUTTON_DISTANCE / PIXELS_PER_CM) * Math.sin(angleRad);
 
-      buttons.push({
-        x: centerX * PIXELS_PER_CM,
-        y: centerY * PIXELS_PER_CM,
-        angle,
-        wallAngle: angle
-      });
+        buttons.push({
+          x: centerX * PIXELS_PER_CM,
+          y: centerY * PIXELS_PER_CM,
+          angle,
+          wallAngle: angle,
+          wallId: activeWallId,
+          isEnd: false,
+        });
+      }
+    }
+
+    if (freeEndpoints.has(`${activeWallId}-end`)) {
+      for (const angle of [perpendicularAngle1, perpendicularAngle2]) {
+        const angleRad = (angle * Math.PI) / 180;
+        const centerX = wall.endPoint.x + (ARROW_BUTTON_DISTANCE / PIXELS_PER_CM) * Math.cos(angleRad);
+        const centerY = wall.endPoint.y + (ARROW_BUTTON_DISTANCE / PIXELS_PER_CM) * Math.sin(angleRad);
+
+        buttons.push({
+          x: centerX * PIXELS_PER_CM,
+          y: centerY * PIXELS_PER_CM,
+          angle,
+          wallAngle: angle,
+          wallId: activeWallId,
+          isEnd: true,
+        });
+      }
     }
 
     return buttons;
   }
 
   function handleWallSelect(wallId: string) {
-    setSelectedEndpoint(null);
     dispatch({
       type: 'SET_SELECTED_ENTITY',
       payload: { id: wallId, entityType: 'wall' },
@@ -103,7 +123,6 @@ export function Canvas() {
   }
 
   function handleDoorSelect(doorId: string) {
-    setSelectedEndpoint(null);
     dispatch({
       type: 'SET_SELECTED_ENTITY',
       payload: { id: doorId, entityType: 'door' },
@@ -111,7 +130,6 @@ export function Canvas() {
   }
 
   function handleFurnitureSelect(furnitureId: string) {
-    setSelectedEndpoint(null);
     dispatch({
       type: 'SET_SELECTED_ENTITY',
       payload: { id: furnitureId, entityType: 'furniture' },
@@ -128,10 +146,6 @@ export function Canvas() {
     });
   }
 
-  function handleEndpointClick(wallId: string, isEnd: boolean) {
-    setSelectedEndpoint({ wallId, isEnd });
-  }
-
   function handleModalConfirm(length: number, unit: Unit) {
     const newWall: IWall = {
       id: `wall-${Date.now()}-${Math.random()}`,
@@ -144,7 +158,6 @@ export function Canvas() {
     dispatch({ type: 'ADD_WALL', payload: newWall });
 
     setIsModalOpen(false);
-    setSelectedEndpoint(null);
     setPendingWallAngle(0);
     setPendingPreviousWallId(null);
 
@@ -162,16 +175,14 @@ export function Canvas() {
     }
   }
 
-  function handleArrowButtonClick(angle: number) {
-    if (!selectedEndpoint) return;
+  function handleArrowButtonClick(wallId: string, angle: number) {
     setPendingWallAngle(angle);
-    setPendingPreviousWallId(selectedEndpoint.wallId);
+    setPendingPreviousWallId(wallId);
     setIsModalOpen(true);
   }
 
   function handleStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
     if (e.target === e.target.getStage()) {
-      setSelectedEndpoint(null);
       dispatch({
         type: 'SET_SELECTED_ENTITY',
         payload: { id: null, entityType: null },
@@ -213,9 +224,11 @@ export function Canvas() {
   }
 
   const arrowButtonPositions = getArrowButtonPositions();
-  const selectedWall = state.selectedEntityType === 'wall' && state.selectedEntityId
-    ? wallGeometries.get(state.selectedEntityId)
-    : null;
+
+  const activeWallId = state.selectedEntityType === 'wall' && state.selectedEntityId
+    ? state.selectedEntityId
+    : hoveredWallId;
+  const activeWall = activeWallId ? wallGeometries.get(activeWallId) : null;
 
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -274,38 +287,18 @@ export function Canvas() {
 
           {Array.from(wallGeometries.values()).map((geometry) => (
             <React.Fragment key={`endpoints-${geometry.id}`}>
-              <Endpoint
-                point={geometry.startPoint}
-                isHovered={hoveredEndpoint?.wallId === geometry.id && !hoveredEndpoint.isEnd}
-                onMouseEnter={() => setHoveredEndpoint({ wallId: geometry.id, isEnd: false })}
-                onMouseLeave={() => setHoveredEndpoint(null)}
-              />
-              <Endpoint
-                point={geometry.endPoint}
-                isHovered={hoveredEndpoint?.wallId === geometry.id && hoveredEndpoint.isEnd}
-                onMouseEnter={() => setHoveredEndpoint({ wallId: geometry.id, isEnd: true })}
-                onMouseLeave={() => setHoveredEndpoint(null)}
-              />
+              <Endpoint point={geometry.startPoint} />
+              <Endpoint point={geometry.endPoint} />
             </React.Fragment>
           ))}
 
-          {selectedWall && (
+          {activeWall && (
             <>
-              {freeEndpoints.has(`${selectedWall.id}-start`) && (
-                <Endpoint
-                  point={selectedWall.startPoint}
-                  isFree
-                  isSelected={selectedEndpoint?.wallId === selectedWall.id && !selectedEndpoint.isEnd}
-                  onClick={() => handleEndpointClick(selectedWall.id, false)}
-                />
+              {freeEndpoints.has(`${activeWall.id}-start`) && (
+                <Endpoint point={activeWall.startPoint} isFree />
               )}
-              {freeEndpoints.has(`${selectedWall.id}-end`) && (
-                <Endpoint
-                  point={selectedWall.endPoint}
-                  isFree
-                  isSelected={selectedEndpoint?.wallId === selectedWall.id && selectedEndpoint.isEnd}
-                  onClick={() => handleEndpointClick(selectedWall.id, true)}
-                />
+              {freeEndpoints.has(`${activeWall.id}-end`) && (
+                <Endpoint point={activeWall.endPoint} isFree />
               )}
             </>
           )}
@@ -317,7 +310,7 @@ export function Canvas() {
               y={button.y}
               angle={button.wallAngle}
               size={ARROW_BUTTON_SIZE}
-              onClick={() => handleArrowButtonClick(button.angle)}
+              onClick={() => handleArrowButtonClick(button.wallId, button.angle)}
             />
           ))}
         </Layer>

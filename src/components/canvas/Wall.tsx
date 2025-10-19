@@ -5,7 +5,7 @@ import { IWallGeometry } from '../../types';
 const PIXELS_PER_CM = 2;
 const WALL_THICKNESS = 8;
 const WALL_COLOR = '#333';
-const HOVER_COLOR = '#555';
+const HOVER_COLOR = '#FF6B6B';
 const SELECTION_COLOR = '#FF6B6B';
 
 interface IProps {
