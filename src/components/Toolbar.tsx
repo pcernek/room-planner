@@ -39,7 +39,7 @@ export function Toolbar() {
 
         dispatch({ type: 'SET_ROOM', payload: jsonData });
         alert('Room plan imported successfully');
-      } catch (error) {
+      } catch {
         alert('Failed to import room plan: Invalid JSON');
       }
     };

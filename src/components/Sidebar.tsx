@@ -16,7 +16,7 @@ export function Sidebar() {
   function handleAddWall() {
     const parsed = parseDimension(wallLength);
     if (!parsed) {
-      alert('Invalid dimension. Use format like "100 cm" or "3\' 6\""');
+      alert('Invalid dimension. Use format like "100 cm" or "3\' 6"');
       return;
     }
 
@@ -46,7 +46,7 @@ export function Sidebar() {
     const widthParsed = parseDimension(doorWidth);
 
     if (!offsetParsed || !widthParsed) {
-      alert('Invalid dimension. Use format like "100 cm" or "3\' 6\""');
+      alert('Invalid dimension. Use format like "100 cm" or "3\' 6"');
       return;
     }
 
@@ -68,7 +68,7 @@ export function Sidebar() {
     const heightParsed = parseDimension(furnitureHeight);
 
     if (!widthParsed || !heightParsed) {
-      alert('Invalid dimension. Use format like "100 cm" or "3\' 6\""');
+      alert('Invalid dimension. Use format like "100 cm" or "3\' 6"');
       return;
     }
 
