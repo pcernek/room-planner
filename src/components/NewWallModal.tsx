@@ -7,7 +7,7 @@ interface IProps {
   onCancel: () => void;
 }
 
-export function WallLengthModal({ isOpen, onConfirm, onCancel }: IProps) {
+export function NewWallModal({ isOpen, onConfirm, onCancel }: IProps) {
   const [length, setLength] = useState('');
   const [unit, setUnit] = useState<Unit>('cm');
 

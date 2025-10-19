@@ -8,8 +8,8 @@ import { Wall } from './canvas/Wall';
 import { Door } from './canvas/Door';
 import { Furniture } from './canvas/Furniture';
 import { Endpoint } from './canvas/Endpoint';
-import { ArrowButton } from './canvas/ArrowButton';
-import { WallLengthModal } from './WallLengthModal';
+import { NewWallButton } from './canvas/NewWallButton';
+import { NewWallModal } from './NewWallModal';
 
 const PIXELS_PER_CM = 2;
 const ARROW_BUTTON_SIZE = 40;
@@ -62,7 +62,7 @@ export function Canvas() {
     return free;
   }, [state.room.walls, wallGeometries]);
 
-  function getArrowButtonPositions() {
+  function getNewWallButtonPositions() {
     const activeWallId = state.selectedEntityType === 'wall' && state.selectedEntityId
       ? state.selectedEntityId
       : hoveredWallId;
@@ -175,7 +175,7 @@ export function Canvas() {
     }
   }
 
-  function handleArrowButtonClick(wallId: string, angle: number) {
+  function handleNewWallButtonClick(wallId: string, angle: number) {
     setPendingWallAngle(angle);
     setPendingPreviousWallId(wallId);
     setIsModalOpen(true);
@@ -223,7 +223,7 @@ export function Canvas() {
     }
   }
 
-  const arrowButtonPositions = getArrowButtonPositions();
+  const NewWallButtonPositions = getNewWallButtonPositions();
 
   const activeWallId = state.selectedEntityType === 'wall' && state.selectedEntityId
     ? state.selectedEntityId
@@ -303,20 +303,20 @@ export function Canvas() {
             </>
           )}
 
-          {arrowButtonPositions.map((button, index) => (
-            <ArrowButton
+          {NewWallButtonPositions.map((button, index) => (
+            <NewWallButton
               key={index}
               x={button.x}
               y={button.y}
               angle={button.wallAngle}
               size={ARROW_BUTTON_SIZE}
-              onClick={() => handleArrowButtonClick(button.wallId, button.angle)}
+              onClick={() => handleNewWallButtonClick(button.wallId, button.angle)}
             />
           ))}
         </Layer>
       </Stage>
 
-      <WallLengthModal
+      <NewWallModal
         isOpen={isModalOpen}
         onConfirm={handleModalConfirm}
         onCancel={handleModalCancel}
