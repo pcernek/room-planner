@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Stage, Layer } from 'react-konva';
 import Konva from 'konva';
 import { useRoom } from '../store/RoomContext';
@@ -25,6 +25,14 @@ export function Canvas() {
   const [pendingWallAngle, setPendingWallAngle] = useState<number>(0);
   const [pendingPreviousWallId, setPendingPreviousWallId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    if (state.room.walls.length === 0 && !isModalOpen) {
+      setIsModalOpen(true);
+      setPendingWallAngle(0);
+      setPendingPreviousWallId(null);
+    }
+  }, [state.room.walls.length, isModalOpen]);
 
   const wallGeometries = useMemo(
     () => calculateWallGeometries(state.room.walls, state.room.originWallId),
@@ -125,8 +133,6 @@ export function Canvas() {
   }
 
   function handleModalConfirm(length: number, unit: Unit) {
-    if (!pendingPreviousWallId) return;
-
     const newWall: IWall = {
       id: `wall-${Date.now()}-${Math.random()}`,
       length,
@@ -149,9 +155,11 @@ export function Canvas() {
   }
 
   function handleModalCancel() {
-    setIsModalOpen(false);
-    setPendingWallAngle(0);
-    setPendingPreviousWallId(null);
+    if (state.room.walls.length > 0) {
+      setIsModalOpen(false);
+      setPendingWallAngle(0);
+      setPendingPreviousWallId(null);
+    }
   }
 
   function handleArrowButtonClick(angle: number) {

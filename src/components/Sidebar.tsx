@@ -1,40 +1,15 @@
 import React, { useState } from 'react';
 import { useRoom } from '../store/RoomContext';
 import { parseDimension } from '../utils/units';
-import { IWall, IDoor, IFurniture } from '../types';
+import { IDoor, IFurniture } from '../types';
 
 export function Sidebar() {
   const { state, dispatch } = useRoom();
-  const [wallLength, setWallLength] = useState('');
-  const [wallAngle, setWallAngle] = useState(0);
   const [doorOffset, setDoorOffset] = useState('');
   const [doorWidth, setDoorWidth] = useState('');
   const [furnitureName, setFurnitureName] = useState('Sofa');
   const [furnitureWidth, setFurnitureWidth] = useState('');
   const [furnitureHeight, setFurnitureHeight] = useState('');
-
-  function handleAddWall() {
-    const parsed = parseDimension(wallLength);
-    if (!parsed) {
-      alert('Invalid dimension. Use format like "100 cm" or "3\' 6"');
-      return;
-    }
-
-    const previousWallId = state.room.walls.length > 0 && state.selectedEntityId && state.selectedEntityType === 'wall'
-      ? state.selectedEntityId
-      : null;
-
-    const newWall: IWall = {
-      id: `wall-${Date.now()}-${Math.random()}`,
-      length: parsed.value,
-      angle: wallAngle,
-      previousWallId,
-      unit: parsed.unit,
-    };
-
-    dispatch({ type: 'ADD_WALL', payload: newWall });
-    setWallLength('');
-  }
 
   function handleAddDoor() {
     if (!state.selectedEntityId || state.selectedEntityType !== 'wall') {
@@ -191,36 +166,6 @@ export function Sidebar() {
       <h2 style={styles.title}>Room Planner</h2>
 
       <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Add Wall</h3>
-        <input
-          type="text"
-          placeholder="Length (e.g. 300cm or 10')"
-          value={wallLength}
-          onChange={(e) => setWallLength(e.target.value)}
-          style={styles.input}
-        />
-        <div style={styles.angleControl}>
-          <button onClick={() => setWallAngle(a => a - 90)} style={styles.smallButton}>
-            ↶ 90°
-          </button>
-          <span style={styles.angleDisplay}>{wallAngle}°</span>
-          <button onClick={() => setWallAngle(a => a + 90)} style={styles.smallButton}>
-            ↷ 90°
-          </button>
-        </div>
-        <input
-          type="number"
-          placeholder="Angle (degrees)"
-          value={wallAngle}
-          onChange={(e) => setWallAngle(parseFloat(e.target.value) || 0)}
-          style={styles.input}
-        />
-        <button onClick={handleAddWall} style={styles.button}>
-          Add Wall
-        </button>
-      </div>
-
-      <div style={styles.section}>
         <h3 style={styles.sectionTitle}>Add Door</h3>
         <p style={styles.hint}>Select a wall first</p>
         <input
@@ -333,24 +278,6 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '4px',
     fontSize: '14px',
     cursor: 'pointer',
-  },
-  angleControl: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '10px',
-  },
-  smallButton: {
-    padding: '8px 12px',
-    backgroundColor: '#fff',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    fontSize: '14px',
-    cursor: 'pointer',
-  },
-  angleDisplay: {
-    fontSize: '16px',
-    fontWeight: 'bold',
   },
   hint: {
     margin: '0 0 10px 0',
