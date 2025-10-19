@@ -1,8 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useRoom } from '../store/RoomContext';
 import { calculateWallGeometries, distance, isPointNearLine } from '../utils/geometry';
-import { IPoint, IWallGeometry } from '../types';
+import { IPoint, IWallGeometry, IWall, Unit } from '../types';
 import { toCm } from '../utils/units';
+import { WallLengthModal } from './WallLengthModal';
+import { ArrowButton } from './ArrowButton';
 
 const PIXELS_PER_CM = 2;
 const WALL_THICKNESS = 8;
@@ -10,6 +12,9 @@ const DOOR_COLOR = '#8B4513';
 const WALL_COLOR = '#333';
 const FURNITURE_COLOR = '#4A90E2';
 const ENDPOINT_RADIUS = 8;
+const FREE_ENDPOINT_RADIUS = 12;
+const ARROW_BUTTON_SIZE = 40;
+const ARROW_BUTTON_DISTANCE = 50;
 const SELECTION_COLOR = '#FF6B6B';
 
 export function Canvas() {
@@ -20,6 +25,10 @@ export function Canvas() {
   const [draggingFurnitureId, setDraggingFurnitureId] = useState<string | null>(null);
   const [hoveredWallId, setHoveredWallId] = useState<string | null>(null);
   const [hoveredEndpoint, setHoveredEndpoint] = useState<{ wallId: string; isEnd: boolean } | null>(null);
+  const [selectedEndpoint, setSelectedEndpoint] = useState<{ wallId: string; isEnd: boolean } | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pendingWallAngle, setPendingWallAngle] = useState<number>(0);
+  const [pendingPreviousWallId, setPendingPreviousWallId] = useState<string | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -35,14 +44,19 @@ export function Canvas() {
     ctx.scale(state.viewport.scale, state.viewport.scale);
 
     const wallGeometries = calculateWallGeometries(state.room.walls, state.room.originWallId);
+    const freeEndpoints = getFreeEndpoints(wallGeometries);
 
     drawWalls(ctx, wallGeometries);
     drawDoors(ctx, state.room.doors, wallGeometries);
     drawFurniture(ctx);
     drawEndpoints(ctx, wallGeometries);
 
+    if (state.selectedEntityType === 'wall' && state.selectedEntityId) {
+      drawFreeEndpoints(ctx, wallGeometries, freeEndpoints);
+    }
+
     ctx.restore();
-  }, [state.room, state.viewport, state.selectedEntityId, state.selectedEntityType, hoveredWallId, hoveredEndpoint]);
+  }, [state.room, state.viewport, state.selectedEntityId, state.selectedEntityType, hoveredWallId, hoveredEndpoint, selectedEndpoint]);
 
   function drawWalls(ctx: CanvasRenderingContext2D, wallGeometries: Map<string, IWallGeometry>) {
     wallGeometries.forEach((geometry) => {
@@ -98,9 +112,6 @@ export function Canvas() {
       ctx.lineTo(doorEnd.x * PIXELS_PER_CM, doorEnd.y * PIXELS_PER_CM);
       ctx.stroke();
 
-      const perpX = -dy / wallLength;
-      const perpY = dx / wallLength;
-
       const arcCenter = doorEnd;
       const arcRadius = widthInCm;
       const startAngle = Math.atan2(dy, dx);
@@ -145,6 +156,54 @@ export function Canvas() {
     });
   }
 
+  function getFreeEndpoints(wallGeometries: Map<string, IWallGeometry>): Set<string> {
+    const freeEndpoints = new Set<string>();
+    const connectedEndpoints = new Set<string>();
+
+    state.room.walls.forEach(wall => {
+      if (wall.previousWallId) {
+        connectedEndpoints.add(`${wall.previousWallId}-end`);
+      }
+    });
+
+    wallGeometries.forEach((geometry) => {
+      const startKey = `${geometry.id}-start`;
+      const endKey = `${geometry.id}-end`;
+
+      if (!connectedEndpoints.has(startKey)) {
+        freeEndpoints.add(startKey);
+      }
+      if (!connectedEndpoints.has(endKey)) {
+        freeEndpoints.add(endKey);
+      }
+    });
+
+    return freeEndpoints;
+  }
+
+  function drawFreeEndpoints(ctx: CanvasRenderingContext2D, wallGeometries: Map<string, IWallGeometry>, freeEndpoints: Set<string>) {
+    const selectedWall = wallGeometries.get(state.selectedEntityId!);
+    if (!selectedWall) return;
+
+    const drawFreeEndpoint = (wallId: string, point: IPoint, isEnd: boolean) => {
+      const key = `${wallId}-${isEnd ? 'end' : 'start'}`;
+      if (!freeEndpoints.has(key)) return;
+
+      const isSelected = selectedEndpoint?.wallId === wallId && selectedEndpoint?.isEnd === isEnd;
+
+      ctx.strokeStyle = isSelected ? SELECTION_COLOR : '#4A90E2';
+      ctx.fillStyle = isSelected ? SELECTION_COLOR : '#fff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(point.x * PIXELS_PER_CM, point.y * PIXELS_PER_CM, FREE_ENDPOINT_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    };
+
+    drawFreeEndpoint(selectedWall.id, selectedWall.startPoint, false);
+    drawFreeEndpoint(selectedWall.id, selectedWall.endPoint, true);
+  }
+
   function drawEndpoints(ctx: CanvasRenderingContext2D, wallGeometries: Map<string, IWallGeometry>) {
     wallGeometries.forEach((geometry) => {
       const drawEndpoint = (point: IPoint, isEnd: boolean) => {
@@ -171,8 +230,67 @@ export function Canvas() {
     return { x, y };
   }
 
+  function worldToScreen(worldX: number, worldY: number): IPoint {
+    const x = worldX * PIXELS_PER_CM * state.viewport.scale + state.viewport.offsetX;
+    const y = worldY * PIXELS_PER_CM * state.viewport.scale + state.viewport.offsetY;
+    return { x, y };
+  }
+
+  function getArrowButtonPositions(): Array<{ screenX: number; screenY: number; angle: number; wallAngle: number }> {
+    if (!selectedEndpoint) return [];
+
+    const wallGeometries = calculateWallGeometries(state.room.walls, state.room.originWallId);
+    const wall = wallGeometries.get(selectedEndpoint.wallId);
+    if (!wall) return [];
+
+    const point = selectedEndpoint.isEnd ? wall.endPoint : wall.startPoint;
+    const wallAngle = wall.angle;
+
+    const perpendicularAngle1 = wallAngle + 90;
+    const perpendicularAngle2 = wallAngle - 90;
+
+    const buttons = [];
+
+    for (const angle of [perpendicularAngle1, perpendicularAngle2]) {
+      const angleRad = (angle * Math.PI) / 180;
+      const centerX = point.x + (ARROW_BUTTON_DISTANCE / PIXELS_PER_CM) * Math.cos(angleRad);
+      const centerY = point.y + (ARROW_BUTTON_DISTANCE / PIXELS_PER_CM) * Math.sin(angleRad);
+
+      const screenPos = worldToScreen(centerX, centerY);
+      buttons.push({ screenX: screenPos.x, screenY: screenPos.y, angle, wallAngle: angle });
+    }
+
+    return buttons;
+  }
+
   function handleMouseDown(event: React.MouseEvent<HTMLCanvasElement>) {
     const worldPoint = screenToWorld(event.clientX, event.clientY);
+    const wallGeometries = calculateWallGeometries(state.room.walls, state.room.originWallId);
+
+    if (state.selectedEntityType === 'wall' && state.selectedEntityId) {
+      const freeEndpoints = getFreeEndpoints(wallGeometries);
+      const selectedWall = wallGeometries.get(state.selectedEntityId);
+
+      if (selectedWall) {
+        const checkFreeEndpoint = (wallId: string, point: IPoint, isEnd: boolean): boolean => {
+          const key = `${wallId}-${isEnd ? 'end' : 'start'}`;
+          if (!freeEndpoints.has(key)) return false;
+
+          const dist = distance(worldPoint, point);
+          return dist < FREE_ENDPOINT_RADIUS / PIXELS_PER_CM;
+        };
+
+        if (checkFreeEndpoint(selectedWall.id, selectedWall.startPoint, false)) {
+          setSelectedEndpoint({ wallId: selectedWall.id, isEnd: false });
+          return;
+        }
+
+        if (checkFreeEndpoint(selectedWall.id, selectedWall.endPoint, true)) {
+          setSelectedEndpoint({ wallId: selectedWall.id, isEnd: true });
+          return;
+        }
+      }
+    }
 
     const clickedFurniture = state.room.furniture.find((furniture) => {
       const widthInCm = toCm(furniture.width, furniture.unit);
@@ -188,6 +306,7 @@ export function Canvas() {
     if (clickedFurniture) {
       setDraggingFurnitureId(clickedFurniture.id);
       setDragStart(worldPoint);
+      setSelectedEndpoint(null);
       dispatch({
         type: 'SET_SELECTED_ENTITY',
         payload: { id: clickedFurniture.id, entityType: 'furniture' },
@@ -195,10 +314,9 @@ export function Canvas() {
       return;
     }
 
-    const wallGeometries = calculateWallGeometries(state.room.walls, state.room.originWallId);
-
     for (const geometry of wallGeometries.values()) {
       if (distance(worldPoint, geometry.startPoint) < ENDPOINT_RADIUS / PIXELS_PER_CM) {
+        setSelectedEndpoint(null);
         dispatch({
           type: 'SET_SELECTED_ENTITY',
           payload: { id: geometry.id, entityType: 'wall' },
@@ -206,6 +324,7 @@ export function Canvas() {
         return;
       }
       if (distance(worldPoint, geometry.endPoint) < ENDPOINT_RADIUS / PIXELS_PER_CM) {
+        setSelectedEndpoint(null);
         dispatch({
           type: 'SET_SELECTED_ENTITY',
           payload: { id: geometry.id, entityType: 'wall' },
@@ -216,6 +335,7 @@ export function Canvas() {
 
     for (const geometry of wallGeometries.values()) {
       if (isPointNearLine(worldPoint, geometry.startPoint, geometry.endPoint, WALL_THICKNESS / PIXELS_PER_CM)) {
+        setSelectedEndpoint(null);
         dispatch({
           type: 'SET_SELECTED_ENTITY',
           payload: { id: geometry.id, entityType: 'wall' },
@@ -225,6 +345,7 @@ export function Canvas() {
     }
 
     if (state.activeTool === 'select') {
+      setSelectedEndpoint(null);
       setIsDragging(true);
       setDragStart({ x: event.clientX, y: event.clientY });
     }
@@ -317,22 +438,78 @@ export function Canvas() {
     });
   }
 
+  function handleModalConfirm(length: number, unit: Unit) {
+    if (!pendingPreviousWallId) return;
+
+    const newWall: IWall = {
+      id: `wall-${Date.now()}-${Math.random()}`,
+      length,
+      angle: pendingWallAngle,
+      previousWallId: pendingPreviousWallId,
+      unit,
+    };
+
+    dispatch({ type: 'ADD_WALL', payload: newWall });
+
+    setIsModalOpen(false);
+    setSelectedEndpoint(null);
+    setPendingWallAngle(0);
+    setPendingPreviousWallId(null);
+
+    dispatch({
+      type: 'SET_SELECTED_ENTITY',
+      payload: { id: newWall.id, entityType: 'wall' },
+    });
+  }
+
+  function handleModalCancel() {
+    setIsModalOpen(false);
+    setPendingWallAngle(0);
+    setPendingPreviousWallId(null);
+  }
+
+  function handleArrowButtonClick(angle: number) {
+    if (!selectedEndpoint) return;
+    setPendingWallAngle(angle);
+    setPendingPreviousWallId(selectedEndpoint.wallId);
+    setIsModalOpen(true);
+  }
+
+  const arrowButtonPositions = getArrowButtonPositions();
+
   return (
-    <canvas
-      ref={canvasRef}
-      width={1200}
-      height={800}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onWheel={handleWheel}
-      style={{
-        border: '1px solid #ddd',
-        cursor: isDragging ? 'grabbing' : draggingFurnitureId ? 'move' : 'default',
-        backgroundColor: '#fff',
-      }}
-    />
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      <canvas
+        ref={canvasRef}
+        width={1200}
+        height={800}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
+        style={{
+          border: '1px solid #ddd',
+          cursor: isDragging ? 'grabbing' : draggingFurnitureId ? 'move' : 'default',
+          backgroundColor: '#fff',
+        }}
+      />
+      {arrowButtonPositions.map((button, index) => (
+        <ArrowButton
+          key={index}
+          centerX={button.screenX}
+          centerY={button.screenY}
+          angle={button.wallAngle}
+          size={ARROW_BUTTON_SIZE}
+          onClick={() => handleArrowButtonClick(button.angle)}
+        />
+      ))}
+      <WallLengthModal
+        isOpen={isModalOpen}
+        onConfirm={handleModalConfirm}
+        onCancel={handleModalCancel}
+      />
+    </div>
   );
 }
 
