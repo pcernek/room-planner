@@ -3,7 +3,7 @@ import { Stage, Layer } from 'react-konva';
 import Konva from 'konva';
 import { useRoom } from '../store/RoomContext';
 import { calculateWallGeometries } from '../utils/geometry';
-import { IWall, Unit } from '../types';
+import { INewWall, Unit } from '../types';
 import { Wall } from './canvas/Wall';
 import { Door } from './canvas/Door';
 import { Furniture } from './canvas/Furniture';
@@ -147,8 +147,7 @@ export function Canvas() {
   }
 
   function handleModalConfirm(length: number, unit: Unit) {
-    const newWall: IWall = {
-      id: `wall-${Date.now()}-${Math.random()}`,
+    const newWall: INewWall = {
       length,
       angle: pendingWallAngle,
       previousWallId: pendingPreviousWallId,
@@ -160,11 +159,6 @@ export function Canvas() {
     setIsModalOpen(false);
     setPendingWallAngle(0);
     setPendingPreviousWallId(null);
-
-    dispatch({
-      type: 'SET_SELECTED_ENTITY',
-      payload: { id: newWall.id, entityType: 'wall' },
-    });
   }
 
   function handleModalCancel() {

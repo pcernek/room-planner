@@ -8,6 +8,13 @@ export interface IWall {
   unit: Unit;
 }
 
+export interface INewWall {
+  length: number;
+  angle: number;
+  previousWallId: string | null;
+  unit: Unit;
+}
+
 export interface IDoor {
   id: string;
   wallId: string;
@@ -16,8 +23,24 @@ export interface IDoor {
   unit: Unit;
 }
 
+export interface INewDoor {
+  wallId: string;
+  offsetFromStart: number;
+  width: number;
+  unit: Unit;
+}
+
 export interface IFurniture {
   id: string;
+  name: string;
+  position: { x: number; y: number };
+  width: number;
+  height: number;
+  rotation: number;
+  unit: Unit;
+}
+
+export interface INewFurniture {
   name: string;
   position: { x: number; y: number };
   width: number;

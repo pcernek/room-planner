@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { IRoom, IWall, IDoor, IFurniture, Tool, IViewport } from '../types';
+import { nanoid } from 'nanoid';
+import { IRoom, IWall, IDoor, IFurniture, INewWall, INewDoor, INewFurniture, Tool, IViewport } from '../types';
 
 interface IRoomState {
   room: IRoom;
@@ -11,13 +12,13 @@ interface IRoomState {
 
 type RoomAction =
   | { type: 'SET_ROOM'; payload: IRoom }
-  | { type: 'ADD_WALL'; payload: IWall }
+  | { type: 'ADD_WALL'; payload: INewWall }
   | { type: 'UPDATE_WALL'; payload: { id: string; updates: Partial<IWall> } }
   | { type: 'DELETE_WALL'; payload: string }
-  | { type: 'ADD_DOOR'; payload: IDoor }
+  | { type: 'ADD_DOOR'; payload: INewDoor }
   | { type: 'UPDATE_DOOR'; payload: { id: string; updates: Partial<IDoor> } }
   | { type: 'DELETE_DOOR'; payload: string }
-  | { type: 'ADD_FURNITURE'; payload: IFurniture }
+  | { type: 'ADD_FURNITURE'; payload: INewFurniture }
   | { type: 'UPDATE_FURNITURE'; payload: { id: string; updates: Partial<IFurniture> } }
   | { type: 'DELETE_FURNITURE'; payload: string }
   | { type: 'SET_SELECTED_ENTITY'; payload: { id: string | null; entityType: 'wall' | 'door' | 'furniture' | null } }
@@ -47,11 +48,17 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
       return { ...state, room: action.payload };
 
     case 'ADD_WALL': {
-      const newWalls = [...state.room.walls, action.payload];
-      const newOriginWallId = state.room.originWallId || action.payload.id;
+      const newWall: IWall = {
+        id: nanoid(8),
+        ...action.payload,
+      };
+      const newWalls = [...state.room.walls, newWall];
+      const newOriginWallId = state.room.originWallId || newWall.id;
       return {
         ...state,
         room: { ...state.room, walls: newWalls, originWallId: newOriginWallId },
+        selectedEntityId: newWall.id,
+        selectedEntityType: 'wall',
       };
     }
 
@@ -72,8 +79,17 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
     }
 
     case 'ADD_DOOR': {
-      const newDoors = [...state.room.doors, action.payload];
-      return { ...state, room: { ...state.room, doors: newDoors } };
+      const newDoor: IDoor = {
+        id: nanoid(8),
+        ...action.payload,
+      };
+      const newDoors = [...state.room.doors, newDoor];
+      return {
+        ...state,
+        room: { ...state.room, doors: newDoors },
+        selectedEntityId: newDoor.id,
+        selectedEntityType: 'door',
+      };
     }
 
     case 'UPDATE_DOOR': {
@@ -89,8 +105,17 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
     }
 
     case 'ADD_FURNITURE': {
-      const newFurniture = [...state.room.furniture, action.payload];
-      return { ...state, room: { ...state.room, furniture: newFurniture } };
+      const newFurnitureItem: IFurniture = {
+        id: nanoid(8),
+        ...action.payload,
+      };
+      const newFurniture = [...state.room.furniture, newFurnitureItem];
+      return {
+        ...state,
+        room: { ...state.room, furniture: newFurniture },
+        selectedEntityId: newFurnitureItem.id,
+        selectedEntityType: 'furniture',
+      };
     }
 
     case 'UPDATE_FURNITURE': {

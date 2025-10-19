@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useRoom } from '../store/RoomContext';
 import { parseDimension } from '../utils/units';
-import { IDoor, IFurniture } from '../types';
+import { INewDoor, INewFurniture } from '../types';
 
 export function Sidebar() {
   const { state, dispatch } = useRoom();
@@ -25,8 +25,7 @@ export function Sidebar() {
       return;
     }
 
-    const newDoor: IDoor = {
-      id: `door-${Date.now()}-${Math.random()}`,
+    const newDoor: INewDoor = {
       wallId: state.selectedEntityId,
       offsetFromStart: offsetParsed.value,
       width: widthParsed.value,
@@ -47,8 +46,7 @@ export function Sidebar() {
       return;
     }
 
-    const newFurniture: IFurniture = {
-      id: `furniture-${Date.now()}-${Math.random()}`,
+    const newFurniture: INewFurniture = {
       name: furnitureName,
       position: { x: 50, y: 50 },
       width: widthParsed.value,
