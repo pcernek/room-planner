@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { nanoid } from 'nanoid';
 import { IRoom, IWall, IDoor, IFurniture, INewWall, INewDoor, INewFurniture, Tool, IViewport } from '../types';
 import { addAngles } from '../utils/geometry';
+import { newEntityId } from '../utils/id';
 
 interface IRoomState {
   room: IRoom;
@@ -50,7 +50,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
 
     case 'ADD_WALL': {
       const { fromNode, ...wallData } = action.payload;
-      const newWallId = nanoid(8);
+      const newWallId = newEntityId();
 
       let newWall: IWall;
       let updatedWalls = [...state.room.walls];
@@ -116,7 +116,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
 
     case 'ADD_DOOR': {
       const newDoor: IDoor = {
-        id: nanoid(8),
+        id: newEntityId(),
         ...action.payload,
       };
       const newDoors = [...state.room.doors, newDoor];
@@ -142,7 +142,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
 
     case 'ADD_FURNITURE': {
       const newFurnitureItem: IFurniture = {
-        id: nanoid(8),
+        id: newEntityId(),
         ...action.payload,
       };
       const newFurniture = [...state.room.furniture, newFurnitureItem];
