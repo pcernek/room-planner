@@ -8,8 +8,8 @@ import { WallComponent } from './canvas/WallComponent';
 import { DoorComponent } from './canvas/DoorComponent';
 import { FurnitureComponent } from './canvas/FurnitureComponent';
 import { EndpointComponent } from './canvas/EndpointComponent';
+import { ArrowButtonKonva } from './canvas/ArrowButtonKonva';
 import { WallLengthModal } from './WallLengthModal';
-import { ArrowButton } from './ArrowButton';
 
 const PIXELS_PER_CM = 2;
 const ARROW_BUTTON_SIZE = 40;
@@ -56,12 +56,6 @@ export function Canvas() {
     return free;
   }, [state.room.walls, wallGeometries]);
 
-  function worldToScreen(worldX: number, worldY: number) {
-    const x = worldX * PIXELS_PER_CM * state.viewport.scale + state.viewport.offsetX;
-    const y = worldY * PIXELS_PER_CM * state.viewport.scale + state.viewport.offsetY;
-    return { x, y };
-  }
-
   function getArrowButtonPositions() {
     if (!selectedEndpoint) return [];
 
@@ -81,8 +75,12 @@ export function Canvas() {
       const centerX = point.x + (ARROW_BUTTON_DISTANCE / PIXELS_PER_CM) * Math.cos(angleRad);
       const centerY = point.y + (ARROW_BUTTON_DISTANCE / PIXELS_PER_CM) * Math.sin(angleRad);
 
-      const screenPos = worldToScreen(centerX, centerY);
-      buttons.push({ screenX: screenPos.x, screenY: screenPos.y, angle, wallAngle: angle });
+      buttons.push({
+        x: centerX * PIXELS_PER_CM,
+        y: centerY * PIXELS_PER_CM,
+        angle,
+        wallAngle: angle
+      });
     }
 
     return buttons;
@@ -303,19 +301,19 @@ export function Canvas() {
               )}
             </>
           )}
+
+          {arrowButtonPositions.map((button, index) => (
+            <ArrowButtonKonva
+              key={index}
+              x={button.x}
+              y={button.y}
+              angle={button.wallAngle}
+              size={ARROW_BUTTON_SIZE}
+              onClick={() => handleArrowButtonClick(button.angle)}
+            />
+          ))}
         </Layer>
       </Stage>
-
-      {arrowButtonPositions.map((button, index) => (
-        <ArrowButton
-          key={index}
-          centerX={button.screenX}
-          centerY={button.screenY}
-          angle={button.wallAngle}
-          size={ARROW_BUTTON_SIZE}
-          onClick={() => handleArrowButtonClick(button.angle)}
-        />
-      ))}
 
       <WallLengthModal
         isOpen={isModalOpen}
