@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import { nanoid } from 'nanoid';
 import { IRoom, IWall, IDoor, IFurniture, INewWall, INewDoor, INewFurniture, Tool, IViewport } from '../types';
+import { addAngles } from '../utils/geometry';
 
 interface IRoomState {
   room: IRoom;
@@ -48,16 +49,51 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
       return { ...state, room: action.payload };
 
     case 'ADD_WALL': {
-      const newWall: IWall = {
-        id: nanoid(8),
-        ...action.payload,
-      };
-      const newWalls = [...state.room.walls, newWall];
-      const newOriginWallId = state.room.originWallId || newWall.id;
+      const { fromNode, ...wallData } = action.payload;
+      const newWallId = nanoid(8);
+
+      let newWall: IWall;
+      let updatedWalls = [...state.room.walls];
+      let newOriginWallId = state.room.originWallId;
+
+      if (!fromNode) {
+        newWall = {
+          id: newWallId,
+          previousWallId: null,
+          ...wallData,
+        };
+        updatedWalls.push(newWall);
+        newOriginWallId = newOriginWallId || newWallId;
+      } else if (fromNode.endpoint === 'start') {
+        newWall = {
+          id: newWallId,
+          previousWallId: null,
+          ...wallData,
+          angle: addAngles(wallData.angle, 180),
+        };
+        updatedWalls = state.room.walls.map(wall =>
+          wall.id === fromNode.wallId
+            ? { ...wall, previousWallId: newWallId }
+            : wall
+        );
+        updatedWalls.push(newWall);
+
+        if (state.room.originWallId === fromNode.wallId) {
+          newOriginWallId = newWallId;
+        }
+      } else {
+        newWall = {
+          id: newWallId,
+          previousWallId: fromNode.wallId,
+          ...wallData,
+        };
+        updatedWalls.push(newWall);
+      }
+
       return {
         ...state,
-        room: { ...state.room, walls: newWalls, originWallId: newOriginWallId },
-        selectedEntityId: newWall.id,
+        room: { ...state.room, walls: updatedWalls, originWallId: newOriginWallId },
+        selectedEntityId: newWallId,
         selectedEntityType: 'wall',
       };
     }

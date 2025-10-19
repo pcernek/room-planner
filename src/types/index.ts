@@ -10,9 +10,12 @@ export interface IWall {
 
 export interface INewWall {
   length: number;
-  angle: number;
-  previousWallId: string | null;
   unit: Unit;
+  angle: number;
+  fromNode: {
+    wallId: string;
+    endpoint: 'start' | 'end';
+  } | null;
 }
 
 export interface IDoor {

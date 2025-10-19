@@ -21,14 +21,14 @@ export function Canvas() {
   const [hoveredWallId, setHoveredWallId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingWallAngle, setPendingWallAngle] = useState<number>(0);
-  const [pendingPreviousWallId, setPendingPreviousWallId] = useState<string | null>(null);
+  const [pendingFromNode, setPendingFromNode] = useState<{ wallId: string; endpoint: 'start' | 'end' } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (state.room.walls.length === 0 && !isModalOpen) {
       setIsModalOpen(true);
       setPendingWallAngle(0);
-      setPendingPreviousWallId(null);
+      setPendingFromNode(null);
     }
   }, [state.room.walls.length, isModalOpen]);
 
@@ -149,29 +149,29 @@ export function Canvas() {
   function handleModalConfirm(length: number, unit: Unit) {
     const newWall: INewWall = {
       length,
-      angle: pendingWallAngle,
-      previousWallId: pendingPreviousWallId,
       unit,
+      angle: pendingWallAngle,
+      fromNode: pendingFromNode,
     };
 
     dispatch({ type: 'ADD_WALL', payload: newWall });
 
     setIsModalOpen(false);
     setPendingWallAngle(0);
-    setPendingPreviousWallId(null);
+    setPendingFromNode(null);
   }
 
   function handleModalCancel() {
     if (state.room.walls.length > 0) {
       setIsModalOpen(false);
       setPendingWallAngle(0);
-      setPendingPreviousWallId(null);
+      setPendingFromNode(null);
     }
   }
 
-  function handleNewWallButtonClick(wallId: string, angle: number) {
+  function handleNewWallButtonClick(wallId: string, endpoint: 'start' | 'end', angle: number) {
     setPendingWallAngle(angle);
-    setPendingPreviousWallId(wallId);
+    setPendingFromNode({ wallId, endpoint });
     setIsModalOpen(true);
   }
 
@@ -304,7 +304,7 @@ export function Canvas() {
               y={button.y}
               angle={button.wallAngle}
               size={ARROW_BUTTON_SIZE}
-              onClick={() => handleNewWallButtonClick(button.wallId, button.angle)}
+              onClick={() => handleNewWallButtonClick(button.wallId, button.isEnd ? 'end' : 'start', button.angle)}
             />
           ))}
         </Layer>

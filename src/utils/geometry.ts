@@ -9,6 +9,18 @@ export function radiansToDegrees(radians: number): number {
   return (radians * 180) / Math.PI;
 }
 
+export function normalizeAngle(angle: number): number {
+  let normalized = angle % 360;
+  if (normalized < 0) {
+    normalized += 360;
+  }
+  return normalized;
+}
+
+export function addAngles(angle1: number, angle2: number): number {
+  return normalizeAngle(angle1 + angle2);
+}
+
 export function calculateWallGeometries(walls: IWall[], originWallId: string | null): Map<string, IWallGeometry> {
   const geometries = new Map<string, IWallGeometry>();
 
