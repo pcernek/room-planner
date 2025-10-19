@@ -208,7 +208,7 @@ export function Canvas() {
 
   function handleWheel(e: Konva.KonvaEventObject<WheelEvent>) {
     e.evt.preventDefault();
-    const delta = e.evt.deltaY > 0 ? 0.9 : 1.1;
+    const delta = e.evt.deltaY > 0 ? 0.95 : 1.05;
     const newScale = Math.max(0.1, Math.min(5, state.viewport.scale * delta));
     dispatch({
       type: 'SET_VIEWPORT',
