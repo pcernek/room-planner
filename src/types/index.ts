@@ -54,8 +54,6 @@ export interface INewFurniture {
 
 export interface IRoom {
   originWallId: string | null;
-  firstWallId: string | null;
-  lastWallId: string | null;
   walls: IWall[];
   doors: IDoor[];
   furniture: IFurniture[];

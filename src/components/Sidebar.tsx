@@ -86,6 +86,8 @@ export function Sidebar() {
       const wall = state.room.walls.find((w) => w.id === state.selectedEntityId);
       if (!wall) return null;
 
+      const canDelete = state.selectedEntityId === state.room.walls[0]?.id || state.selectedEntityId === state.room.walls[state.room.walls.length - 1]?.id;
+
       return (
         <div style={styles.propertyPanel}>
           <h3 style={styles.panelTitle}>Wall Properties</h3>
@@ -97,9 +99,11 @@ export function Sidebar() {
             <label style={styles.label}>Angle:</label>
             <span>{wall.angle}°</span>
           </div>
-          <button onClick={handleDeleteSelected} style={styles.deleteButton}>
-            Delete Wall
-          </button>
+          {canDelete && (
+            <button onClick={handleDeleteSelected} style={styles.deleteButton}>
+              Delete Wall
+            </button>
+          )}
         </div>
       );
     }

@@ -37,19 +37,15 @@ export function Canvas() {
     [state.room.walls, state.room.originWallId]
   );
 
-  const freeEndpoints = useMemo(() => {
-    const free = new Set<string>();
-
-    if (state.room.firstWallId) {
-      free.add(`${state.room.firstWallId}-start`);
+  const [firstWallId, lastWallId] = useMemo(() => {
+    if (state.room.walls.length === 0) {
+      return [null, null];
     }
 
-    if (state.room.lastWallId) {
-      free.add(`${state.room.lastWallId}-end`);
-    }
-
-    return free;
-  }, [state.room.firstWallId, state.room.lastWallId]);
+    const firstWall = state.room.walls[0]
+    const lastWall = state.room.walls[state.room.walls.length - 1];
+    return [firstWall?.id, lastWall?.id];
+  }, [state.room.walls.length]);
 
   function getNewWallButtonPositions() {
     const activeWallId = state.selectedEntityType === 'wall' && state.selectedEntityId
@@ -67,7 +63,7 @@ export function Canvas() {
 
     const buttons: Array<{ x: number; y: number; angle: number; wallAngle: number; wallId: string; isEnd: boolean }> = [];
 
-    if (freeEndpoints.has(`${activeWallId}-start`)) {
+    if (activeWallId === firstWallId) {
       for (const angle of [perpendicularAngle1, perpendicularAngle2]) {
         const angleRad = (angle * Math.PI) / 180;
         const centerX = wall.startPoint.x + (ARROW_BUTTON_DISTANCE / PIXELS_PER_CM) * Math.cos(angleRad);
@@ -84,7 +80,7 @@ export function Canvas() {
       }
     }
 
-    if (freeEndpoints.has(`${activeWallId}-end`)) {
+    if (activeWallId === lastWallId) {
       for (const angle of [perpendicularAngle1, perpendicularAngle2]) {
         const angleRad = (angle * Math.PI) / 180;
         const centerX = wall.endPoint.x + (ARROW_BUTTON_DISTANCE / PIXELS_PER_CM) * Math.cos(angleRad);
@@ -277,10 +273,10 @@ export function Canvas() {
 
           {activeWall && (
             <>
-              {freeEndpoints.has(`${activeWall.id}-start`) && (
+              {activeWallId === firstWallId && (
                 <Endpoint point={activeWall.startPoint} isFree />
               )}
-              {freeEndpoints.has(`${activeWall.id}-end`) && (
+              {activeWallId === lastWallId && (
                 <Endpoint point={activeWall.endPoint} isFree />
               )}
             </>
