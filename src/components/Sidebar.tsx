@@ -4,7 +4,6 @@ import { INewDoor, INewFurniture } from '../types';
 
 export function Sidebar() {
   const { state, dispatch } = useRoom();
-  const [wallLength, setWallLength] = useState('');
   const [doorOffset, setDoorOffset] = useState('');
   const [doorWidth, setDoorWidth] = useState('');
   const [furnitureName, setFurnitureName] = useState('Sofa');
@@ -89,57 +88,28 @@ export function Sidebar() {
     dispatch({ type: 'SET_SELECTED_ENTITY', payload: { id: null, entityType: null } });
   }
 
-  function handleRotateWall() {
-    if (!state.room || !state.selectedEntityId || state.selectedEntityType !== 'wall') return;
-
-    const wall = state.room.walls.find((w) => w.id === state.selectedEntityId);
-    if (!wall) return;
-
-    const newAngle = (wall.angle + 90) % 360;
+  function handleUpdateWall(updates: { length?: number; angle?: number }) {
+    if (!state.selectedEntityId || state.selectedEntityType !== 'wall') return;
     dispatch({
       type: 'UPDATE_WALL',
-      payload: {
-        id: state.selectedEntityId,
-        updates: { angle: newAngle },
-      },
+      payload: { id: state.selectedEntityId, updates },
     });
   }
 
-  function handleRotateFurniture() {
-    if (!state.room || !state.selectedEntityId || state.selectedEntityType !== 'furniture') return;
+  function handleUpdateDoor(updates: { offsetFromStart?: number; width?: number }) {
+    if (!state.selectedEntityId || state.selectedEntityType !== 'door') return;
+    dispatch({
+      type: 'UPDATE_DOOR',
+      payload: { id: state.selectedEntityId, updates },
+    });
+  }
 
-    const furniture = state.room.furniture.find((f) => f.id === state.selectedEntityId);
-    if (!furniture) return;
-
-    const newRotation = (furniture.rotation + 90) % 360;
+  function handleUpdateFurniture(updates: { name?: string; width?: number; height?: number; rotation?: number }) {
+    if (!state.selectedEntityId || state.selectedEntityType !== 'furniture') return;
     dispatch({
       type: 'UPDATE_FURNITURE',
-      payload: {
-        id: state.selectedEntityId,
-        updates: { rotation: newRotation },
-      },
+      payload: { id: state.selectedEntityId, updates },
     });
-  }
-
-  function handleUpdateWallLength() {
-    if (!state.selectedEntityId || state.selectedEntityType !== 'wall') return;
-
-    const lengthValue = parseFloat(wallLength);
-
-    if (isNaN(lengthValue) || lengthValue <= 0) {
-      alert(`Please enter a valid dimension in ${unitLabel}`);
-      return;
-    }
-
-    dispatch({
-      type: 'UPDATE_WALL',
-      payload: {
-        id: state.selectedEntityId,
-        updates: { length: lengthValue, unit },
-      },
-    });
-
-    setWallLength('');
   }
 
   function renderSelectedEntityPanel() {
@@ -158,27 +128,37 @@ export function Sidebar() {
         <div style={styles.propertyPanel}>
           <h3 style={styles.panelTitle}>Wall Properties</h3>
           <div style={styles.propertyContent}>
-            <div style={styles.property}>
-              <label style={styles.label}>Length:</label>
-              <span>{wall.length} {unitLabel}</span>
-            </div>
-            <div>
+            <div style={styles.propertyColumn}>
+              <label style={styles.label}>Length ({unitLabel})</label>
               <input
                 type="number"
                 step="any"
-                value={wallLength}
-                onChange={(e) => setWallLength(e.target.value)}
-                placeholder={`e.g. ${unit === 'cm' ? '200' : '72'}`}
+                value={wall.length}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  if (!isNaN(value) && value > 0) {
+                    handleUpdateWall({ length: value });
+                  }
+                }}
                 style={styles.input}
               />
-              <button onClick={handleUpdateWallLength} style={styles.button}>
-                Update Length
-              </button>
             </div>
             {isStandalone && (
-              <button onClick={handleRotateWall} style={styles.button}>
-                Rotate 90°
-              </button>
+              <div style={styles.propertyColumn}>
+                <label style={styles.label}>Angle (°)</label>
+                <input
+                  type="number"
+                  step="any"
+                  value={wall.angle}
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value);
+                    if (!isNaN(value)) {
+                      handleUpdateWall({ angle: value % 360 });
+                    }
+                  }}
+                  style={styles.input}
+                />
+              </div>
             )}
             {canDelete && (
               <button onClick={handleDeleteSelected} style={styles.deleteButton}>
@@ -197,17 +177,41 @@ export function Sidebar() {
       return (
         <div style={styles.propertyPanel}>
           <h3 style={styles.panelTitle}>Door Properties</h3>
-          <div style={styles.property}>
-            <label style={styles.label}>Offset:</label>
-            <span>{door.offsetFromStart} {unitLabel}</span>
+          <div style={styles.propertyContent}>
+            <div style={styles.propertyColumn}>
+              <label style={styles.label}>Offset ({unitLabel})</label>
+              <input
+                type="number"
+                step="any"
+                value={door.offsetFromStart}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  if (!isNaN(value) && value >= 0) {
+                    handleUpdateDoor({ offsetFromStart: value });
+                  }
+                }}
+                style={styles.input}
+              />
+            </div>
+            <div style={styles.propertyColumn}>
+              <label style={styles.label}>Width ({unitLabel})</label>
+              <input
+                type="number"
+                step="any"
+                value={door.width}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  if (!isNaN(value) && value > 0) {
+                    handleUpdateDoor({ width: value });
+                  }
+                }}
+                style={styles.input}
+              />
+            </div>
+            <button onClick={handleDeleteSelected} style={styles.deleteButton}>
+              Delete Door
+            </button>
           </div>
-          <div style={styles.property}>
-            <label style={styles.label}>Width:</label>
-            <span>{door.width} {unitLabel}</span>
-          </div>
-          <button onClick={handleDeleteSelected} style={styles.deleteButton}>
-            Delete Door
-          </button>
         </div>
       );
     }
@@ -220,17 +224,60 @@ export function Sidebar() {
         <div style={styles.propertyPanel}>
           <h3 style={styles.panelTitle}>Furniture Properties</h3>
           <div style={styles.propertyContent}>
-            <div style={styles.property}>
-              <label style={styles.label}>Name:</label>
-              <span>{furniture.name}</span>
+            <div style={styles.propertyColumn}>
+              <label style={styles.label}>Name</label>
+              <input
+                type="text"
+                value={furniture.name}
+                onChange={(e) => handleUpdateFurniture({ name: e.target.value })}
+                style={styles.input}
+              />
             </div>
-            <div style={styles.property}>
-              <label style={styles.label}>Size:</label>
-              <span>{furniture.width} × {furniture.height} {unitLabel}</span>
+            <div style={styles.propertyColumn}>
+              <label style={styles.label}>Width ({unitLabel})</label>
+              <input
+                type="number"
+                step="any"
+                value={furniture.width}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  if (!isNaN(value) && value > 0) {
+                    handleUpdateFurniture({ width: value });
+                  }
+                }}
+                style={styles.input}
+              />
             </div>
-            <button onClick={handleRotateFurniture} style={styles.button}>
-              Rotate 90°
-            </button>
+            <div style={styles.propertyColumn}>
+              <label style={styles.label}>Height ({unitLabel})</label>
+              <input
+                type="number"
+                step="any"
+                value={furniture.height}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  if (!isNaN(value) && value > 0) {
+                    handleUpdateFurniture({ height: value });
+                  }
+                }}
+                style={styles.input}
+              />
+            </div>
+            <div style={styles.propertyColumn}>
+              <label style={styles.label}>Rotation (°)</label>
+              <input
+                type="number"
+                step="any"
+                value={furniture.rotation}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  if (!isNaN(value)) {
+                    handleUpdateFurniture({ rotation: value % 360 });
+                  }
+                }}
+                style={styles.input}
+              />
+            </div>
             <button onClick={handleDeleteSelected} style={styles.deleteButton}>
               Delete Furniture
             </button>
@@ -367,6 +414,11 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '10px',
+  },
+  propertyColumn: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '5px',
   },
   hint: {
     margin: '0 0 10px 0',
