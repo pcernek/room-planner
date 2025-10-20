@@ -1,4 +1,5 @@
 import { Rect, Text, Group } from 'react-konva';
+import Konva from 'konva';
 import { IFurniture, Unit } from '../../types';
 import { toPixels, pointToPixels, fromPixels } from '../../utils/canvas';
 
@@ -19,6 +20,16 @@ export function Furniture({ furniture, unit, isSelected, onSelect, onDragStart, 
   const height = furniture.height;
   const positionPixels = pointToPixels(furniture.position, unit);
 
+  const handleMouseEnter = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    const container = e.target.getStage()?.container();
+    if (container) container.style.cursor = 'move';
+  };
+
+  const handleMouseLeave = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    const container = e.target.getStage()?.container();
+    if (container) container.style.cursor = 'default';
+  };
+
   return (
     <Group
       x={positionPixels.x}
@@ -27,6 +38,8 @@ export function Furniture({ furniture, unit, isSelected, onSelect, onDragStart, 
       draggable
       onClick={onSelect}
       onTap={onSelect}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       onDragStart={(e) => {
         e.cancelBubble = true;
         onDragStart();

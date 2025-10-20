@@ -1,4 +1,5 @@
 import { Line, Arc } from 'react-konva';
+import Konva from 'konva';
 import { IDoor, IWallGeometry, Unit } from '../../types';
 import { toPixels, pointToPixels } from '../../utils/canvas';
 
@@ -42,6 +43,16 @@ export function Door({ door, wallGeometry, unit, isSelected, onSelect }: IProps)
   const startAngle = Math.atan2(dy, dx);
   const endAngle = startAngle + Math.PI / 2;
 
+  const handleMouseEnter = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    const container = e.target.getStage()?.container();
+    if (container) container.style.cursor = 'pointer';
+  };
+
+  const handleMouseLeave = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    const container = e.target.getStage()?.container();
+    if (container) container.style.cursor = 'default';
+  };
+
   return (
     <>
       <Line
@@ -56,6 +67,8 @@ export function Door({ door, wallGeometry, unit, isSelected, onSelect }: IProps)
         lineCap="butt"
         onClick={onSelect}
         onTap={onSelect}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       />
       <Arc
         x={doorEndPixels.x}
@@ -66,6 +79,10 @@ export function Door({ door, wallGeometry, unit, isSelected, onSelect }: IProps)
         rotation={startAngle * (180 / Math.PI)}
         stroke={isSelected ? SELECTION_COLOR : '#DDD'}
         strokeWidth={1}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onClick={onSelect}
+        onTap={onSelect}
       />
     </>
   );

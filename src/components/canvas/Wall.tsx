@@ -61,8 +61,16 @@ export function Wall({
         lineJoin="round"
         onClick={onSelect}
         onTap={onSelect}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
+        onMouseEnter={(e) => {
+          const container = e.target.getStage()?.container();
+          if (container) container.style.cursor = 'pointer';
+          onMouseEnter();
+        }}
+        onMouseLeave={(e) => {
+          const container = e.target.getStage()?.container();
+          if (container) container.style.cursor = 'default';
+          onMouseLeave();
+        }}
       />
 
       <Endpoint

@@ -18,6 +18,18 @@ interface IProps {
 export function Endpoint({ point, unit, isFree = false, onMouseEnter, onMouseLeave, onSelect }: IProps) {
   const pixelPoint = pointToPixels(point, unit);
 
+  const handleMouseEnter = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    const container = e.target.getStage()?.container();
+    if (container) container.style.cursor = 'pointer';
+    onMouseEnter?.();
+  };
+
+  const handleMouseLeave = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    const container = e.target.getStage()?.container();
+    if (container) container.style.cursor = 'default';
+    onMouseLeave?.();
+  };
+
   if (isFree) {
     return (
       <Circle
@@ -27,8 +39,8 @@ export function Endpoint({ point, unit, isFree = false, onMouseEnter, onMouseLea
         fill="#fff"
         stroke="#4A90E2"
         strokeWidth={3}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         onClick={onSelect}
         onTap={onSelect}
       />
@@ -41,8 +53,8 @@ export function Endpoint({ point, unit, isFree = false, onMouseEnter, onMouseLea
       y={pixelPoint.y}
       radius={ENDPOINT_RADIUS}
       fill="#666"
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       onClick={onSelect}
       onTap={onSelect}
     />

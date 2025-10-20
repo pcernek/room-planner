@@ -208,16 +208,8 @@ export function Sidebar() {
             <span>{furniture.name}</span>
           </div>
           <div style={styles.property}>
-            <label style={styles.label}>Position:</label>
-            <span>({furniture.position.x.toFixed(1)}, {furniture.position.y.toFixed(1)}) {unitLabel}</span>
-          </div>
-          <div style={styles.property}>
             <label style={styles.label}>Size:</label>
             <span>{furniture.width} × {furniture.height} {unitLabel}</span>
-          </div>
-          <div style={styles.property}>
-            <label style={styles.label}>Rotation:</label>
-            <span>{furniture.rotation}°</span>
           </div>
           <button onClick={handleDeleteSelected} style={styles.deleteButton}>
             Delete Furniture
