@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { IRoom, IWall, IDoor, IFurniture, INewWall, INewDoor, INewFurniture, Tool } from '../types';
+import { IRoom, IWall, IDoor, IFurniture, INewWall, INewDoor, INewFurniture } from '../types';
 import { addAngles } from '../utils/geometry';
 import { newEntityId } from '../utils/id';
 
@@ -7,7 +7,6 @@ interface IRoomState {
   room: IRoom;
   selectedEntityId: string | null;
   selectedEntityType: 'wall' | 'door' | 'furniture' | null;
-  activeTool: Tool;
 }
 
 type RoomAction =
@@ -21,8 +20,7 @@ type RoomAction =
   | { type: 'ADD_FURNITURE'; payload: INewFurniture }
   | { type: 'UPDATE_FURNITURE'; payload: { id: string; updates: Partial<IFurniture> } }
   | { type: 'DELETE_FURNITURE'; payload: string }
-  | { type: 'SET_SELECTED_ENTITY'; payload: { id: string | null; entityType: 'wall' | 'door' | 'furniture' | null } }
-  | { type: 'SET_ACTIVE_TOOL'; payload: Tool };
+  | { type: 'SET_SELECTED_ENTITY'; payload: { id: string | null; entityType: 'wall' | 'door' | 'furniture' | null } };
 
 const initialState: IRoomState = {
   room: {
@@ -33,7 +31,6 @@ const initialState: IRoomState = {
   },
   selectedEntityId: null,
   selectedEntityType: null,
-  activeTool: 'select',
 };
 
 function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
@@ -179,9 +176,6 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
         selectedEntityId: action.payload.id,
         selectedEntityType: action.payload.entityType,
       };
-
-    case 'SET_ACTIVE_TOOL':
-      return { ...state, activeTool: action.payload };
 
     default:
       return state;

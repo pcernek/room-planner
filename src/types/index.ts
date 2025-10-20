@@ -72,8 +72,6 @@ export interface IWallGeometry {
   lengthInCm: number;
 }
 
-export type Tool = 'select' | 'wall' | 'door' | 'furniture';
-
 export interface IViewport {
   offsetX: number;
   offsetY: number;
