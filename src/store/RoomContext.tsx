@@ -76,11 +76,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
             ? { ...wall, previousWallId: newWallId }
             : wall
         );
-        updatedWalls.push(newWall);
-
-        if (state.room.originWallId === fromNode.wallId) {
-          newOriginWallId = newWallId;
-        }
+        updatedWalls.unshift(newWall);
       } else {
         newWall = {
           id: newWallId,

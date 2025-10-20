@@ -21,76 +21,54 @@ export function addAngles(angle1: number, angle2: number): number {
   return normalizeAngle(angle1 + angle2);
 }
 
-export function calculateWallGeometries(walls: IWall[], originWallId: string | null): Map<string, IWallGeometry> {
+export function calculateWallGeometries(orderedWalls: IWall[], originWallId: string | null): Map<string, IWallGeometry> {
   const geometries = new Map<string, IWallGeometry>();
 
-  if (!originWallId || walls.length === 0) {
+  if (!originWallId || orderedWalls.length === 0) {
     return geometries;
   }
 
-  const wallMap = new Map<string, IWall>();
-  walls.forEach(wall => wallMap.set(wall.id, wall));
+  let currentPoint: IPoint = { x: 0, y: 0 };
 
-  const originWall = wallMap.get(originWallId);
-  if (!originWall) {
+  for (const wall of orderedWalls) {
+    const lengthInCm = toCm(wall.length, wall.unit);
+    const angleRad = degreesToRadians(wall.angle);
+    const endPoint: IPoint = {
+      x: currentPoint.x + lengthInCm * Math.cos(angleRad),
+      y: currentPoint.y + lengthInCm * Math.sin(angleRad),
+    };
+
+    geometries.set(wall.id, {
+      id: wall.id,
+      startPoint: currentPoint,
+      endPoint,
+      angle: wall.angle,
+      lengthInCm,
+    });
+
+    currentPoint = endPoint;
+  }
+
+  const originGeometry = geometries.get(originWallId);
+  if (!originGeometry) {
     return geometries;
   }
 
-  const startPoint: IPoint = { x: 0, y: 0 };
-  const lengthInCm = toCm(originWall.length, originWall.unit);
-  const angleRad = degreesToRadians(originWall.angle);
-  const endPoint: IPoint = {
-    x: startPoint.x + lengthInCm * Math.cos(angleRad),
-    y: startPoint.y + lengthInCm * Math.sin(angleRad),
-  };
+  const offsetX = originGeometry.startPoint.x;
+  const offsetY = originGeometry.startPoint.y;
 
-  geometries.set(originWall.id, {
-    id: originWall.id,
-    startPoint,
-    endPoint,
-    angle: originWall.angle,
-    lengthInCm,
-  });
-
-  const processed = new Set<string>([originWallId]);
-  let changed = true;
-
-  while (changed) {
-    changed = false;
-
-    for (const wall of walls) {
-      if (processed.has(wall.id)) {
-        continue;
-      }
-
-      if (!wall.previousWallId) {
-        continue;
-      }
-
-      const previousGeometry = geometries.get(wall.previousWallId);
-      if (!previousGeometry) {
-        continue;
-      }
-
-      const newStartPoint = previousGeometry.endPoint;
-      const newLengthInCm = toCm(wall.length, wall.unit);
-      const newAngleRad = degreesToRadians(wall.angle);
-      const newEndPoint: IPoint = {
-        x: newStartPoint.x + newLengthInCm * Math.cos(newAngleRad),
-        y: newStartPoint.y + newLengthInCm * Math.sin(newAngleRad),
-      };
-
-      geometries.set(wall.id, {
-        id: wall.id,
-        startPoint: newStartPoint,
-        endPoint: newEndPoint,
-        angle: wall.angle,
-        lengthInCm: newLengthInCm,
-      });
-
-      processed.add(wall.id);
-      changed = true;
-    }
+  for (const [wallId, geometry] of geometries) {
+    geometries.set(wallId, {
+      ...geometry,
+      startPoint: {
+        x: geometry.startPoint.x - offsetX,
+        y: geometry.startPoint.y - offsetY,
+      },
+      endPoint: {
+        x: geometry.endPoint.x - offsetX,
+        y: geometry.endPoint.y - offsetY,
+      },
+    });
   }
 
   return geometries;
