@@ -77,6 +77,22 @@ export function Sidebar() {
     dispatch({ type: 'SET_SELECTED_ENTITY', payload: { id: null, entityType: null } });
   }
 
+  function handleRotateWall() {
+    if (!state.selectedEntityId || state.selectedEntityType !== 'wall') return;
+
+    const wall = state.room.walls.find((w) => w.id === state.selectedEntityId);
+    if (!wall) return;
+
+    const newAngle = (wall.angle + 90) % 360;
+    dispatch({
+      type: 'UPDATE_WALL',
+      payload: {
+        id: state.selectedEntityId,
+        updates: { angle: newAngle },
+      },
+    });
+  }
+
   function renderSelectedEntityPanel() {
     if (!state.selectedEntityId || !state.selectedEntityType) {
       return <div style={styles.noSelection}>No entity selected</div>;
@@ -87,6 +103,7 @@ export function Sidebar() {
       if (!wall) return null;
 
       const canDelete = state.selectedEntityId === state.room.walls[0]?.id || state.selectedEntityId === state.room.walls[state.room.walls.length - 1]?.id;
+      const isStandalone = state.room.walls.length === 1;
 
       return (
         <div style={styles.propertyPanel}>
@@ -95,6 +112,11 @@ export function Sidebar() {
             <label style={styles.label}>Length:</label>
             <span>{wall.length} {wall.unit}</span>
           </div>
+          {isStandalone && (
+            <button onClick={handleRotateWall} style={styles.button}>
+              Rotate 90°
+            </button>
+          )}
           {canDelete && (
             <button onClick={handleDeleteSelected} style={styles.deleteButton}>
               Delete Wall
