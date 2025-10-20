@@ -1,4 +1,5 @@
 import { Circle } from 'react-konva';
+import Konva from 'konva';
 import { IPoint } from '../../types';
 
 const PIXELS_PER_CM = 2;
@@ -8,9 +9,12 @@ const FREE_ENDPOINT_RADIUS = 12;
 interface IProps {
   point: IPoint;
   isFree?: boolean;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
+  onSelect?: (e: Konva.KonvaEventObject<MouseEvent>) => void;
 }
 
-export function Endpoint({ point, isFree = false }: IProps) {
+export function Endpoint({ point, isFree = false, onMouseEnter, onMouseLeave, onSelect }: IProps) {
   if (isFree) {
     return (
       <Circle
@@ -20,6 +24,10 @@ export function Endpoint({ point, isFree = false }: IProps) {
         fill="#fff"
         stroke="#4A90E2"
         strokeWidth={3}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        onClick={onSelect}
+        onTap={onSelect}
       />
     );
   }
@@ -30,6 +38,10 @@ export function Endpoint({ point, isFree = false }: IProps) {
       y={point.y * PIXELS_PER_CM}
       radius={ENDPOINT_RADIUS}
       fill="#666"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onClick={onSelect}
+      onTap={onSelect}
     />
   );
 }

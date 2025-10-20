@@ -59,8 +59,20 @@ export function Wall({
         onMouseLeave={onMouseLeave}
       />
 
-      <Endpoint point={geometry.startPoint} isFree={isActive && hasStartFree} />
-      <Endpoint point={geometry.endPoint} isFree={isActive && hasEndFree} />
+      <Endpoint
+        point={geometry.startPoint}
+        isFree={isActive && hasStartFree}
+        onMouseEnter={hasStartFree ? onMouseEnter : undefined}
+        onMouseLeave={hasStartFree ? onMouseLeave : undefined}
+        onSelect={hasStartFree ? onSelect : undefined}
+      />
+      <Endpoint
+        point={geometry.endPoint}
+        isFree={isActive && hasEndFree}
+        onMouseEnter={hasEndFree ? onMouseEnter : undefined}
+        onMouseLeave={hasEndFree ? onMouseLeave : undefined}
+        onSelect={hasEndFree ? onSelect : undefined}
+      />
 
       {isActive && hasStartFree && (
         <>
