@@ -95,10 +95,6 @@ export function Sidebar() {
             <label style={styles.label}>Length:</label>
             <span>{wall.length} {wall.unit}</span>
           </div>
-          <div style={styles.property}>
-            <label style={styles.label}>Angle:</label>
-            <span>{wall.angle}°</span>
-          </div>
           {canDelete && (
             <button onClick={handleDeleteSelected} style={styles.deleteButton}>
               Delete Wall
