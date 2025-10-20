@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { useRoom } from '../store/RoomContext';
-import { INewDoor, INewFurniture } from '../types';
+import { useEditor } from '../store/EditorContext';
+import { INewDoor } from '../types';
 import { WallPropertiesPanel } from './properties/WallPropertiesPanel';
 import { DoorPropertiesPanel } from './properties/DoorPropertiesPanel';
 import { FurniturePropertiesPanel } from './properties/FurniturePropertiesPanel';
 
 export function Sidebar() {
   const { state, dispatch } = useRoom();
+  const { setActiveTool } = useEditor();
   const [doorOffset, setDoorOffset] = useState('');
   const [doorWidth, setDoorWidth] = useState('');
-  const [furnitureName, setFurnitureName] = useState('Sofa');
-  const [furnitureWidth, setFurnitureWidth] = useState('');
-  const [furnitureHeight, setFurnitureHeight] = useState('');
 
   if (!state.room) {
     return (
@@ -52,26 +51,7 @@ export function Sidebar() {
   }
 
   function handleAddFurniture() {
-    const widthValue = parseFloat(furnitureWidth);
-    const heightValue = parseFloat(furnitureHeight);
-
-    if (isNaN(widthValue) || widthValue <= 0 || isNaN(heightValue) || heightValue <= 0) {
-      alert(`Please enter valid dimensions in ${unitLabel}`);
-      return;
-    }
-
-    const newFurniture: INewFurniture = {
-      name: furnitureName,
-      position: { x: 50, y: 50 },
-      width: widthValue,
-      height: heightValue,
-      rotation: 0,
-      unit,
-    };
-
-    dispatch({ type: 'ADD_FURNITURE', payload: newFurniture });
-    setFurnitureWidth('');
-    setFurnitureHeight('');
+    setActiveTool('placeFurniture');
   }
 
   function handleDeleteSelected() {
@@ -197,29 +177,7 @@ export function Sidebar() {
 
       <div style={styles.section}>
         <h3 style={styles.sectionTitle}>Add Furniture</h3>
-        <input
-          type="text"
-          placeholder="Name"
-          value={furnitureName}
-          onChange={(e) => setFurnitureName(e.target.value)}
-          style={styles.input}
-        />
-        <input
-          type="number"
-          step="any"
-          placeholder={`Width (${unitLabel})`}
-          value={furnitureWidth}
-          onChange={(e) => setFurnitureWidth(e.target.value)}
-          style={styles.input}
-        />
-        <input
-          type="number"
-          step="any"
-          placeholder={`Height (${unitLabel})`}
-          value={furnitureHeight}
-          onChange={(e) => setFurnitureHeight(e.target.value)}
-          style={styles.input}
-        />
+        <p style={styles.hint}>Click on canvas to draw furniture bounding box</p>
         <button onClick={handleAddFurniture} style={styles.button}>
           Add Furniture
         </button>

@@ -80,3 +80,5 @@ export interface IViewport {
   scale: number;
 }
 
+export type Tool = 'select' | 'placeFurniture';
+

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { IFurniture, Unit } from '../../types';
 import { propertyPanelStyles as styles } from './propertyPanelStyles';
@@ -15,6 +15,7 @@ export function FurniturePropertiesPanel({ furniture, unit, onUpdate, onDelete }
   const [editableWidth, setEditableWidth] = useState(furniture.width.toString());
   const [editableHeight, setEditableHeight] = useState(furniture.height.toString());
   const [editableRotation, setEditableRotation] = useState(furniture.rotation.toString());
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const unitLabel = unit === 'cm' ? 'cm' : 'in';
 
@@ -23,6 +24,14 @@ export function FurniturePropertiesPanel({ furniture, unit, onUpdate, onDelete }
     setEditableWidth(furniture.width.toString());
     setEditableHeight(furniture.height.toString());
     setEditableRotation(furniture.rotation.toString());
+
+    // Focus name input when furniture changes (e.g., newly created)
+    if (nameInputRef.current && furniture.name === 'New Furniture') {
+      setTimeout(() => {
+        nameInputRef.current?.focus();
+        nameInputRef.current?.select();
+      }, 0);
+    }
   }, [furniture.id, furniture.name, furniture.width, furniture.height, furniture.rotation]);
 
   const debouncedUpdate = useDebouncedCallback(
@@ -39,6 +48,7 @@ export function FurniturePropertiesPanel({ furniture, unit, onUpdate, onDelete }
         <div style={styles.propertyColumn}>
           <label style={styles.label}>Name</label>
           <input
+            ref={nameInputRef}
             type="text"
             value={editableName}
             onChange={(e) => {

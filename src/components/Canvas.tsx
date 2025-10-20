@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Stage, Layer } from 'react-konva';
+import { Stage, Layer, Rect, Circle } from 'react-konva';
 import Konva from 'konva';
 import { useRoom } from '../store/RoomContext';
 import { useEditor } from '../store/EditorContext';
@@ -10,10 +10,12 @@ import { Door } from './canvas/Door';
 import { Furniture } from './canvas/Furniture';
 import { NewWallModal } from './NewWallModal';
 import { RoomSetupModal } from './RoomSetupModal';
+import { toPixels } from '../utils/canvas';
+import { useFurniturePlacement } from '../hooks/useFurniturePlacement';
 
 export function Canvas() {
   const { state, dispatch } = useRoom();
-  const { state: editorState, setCanvasDimensions, setViewport } = useEditor();
+  const { state: editorState, setCanvasDimensions, setViewport, setActiveTool } = useEditor();
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredWallId, setHoveredWallId] = useState<string | null>(null);
@@ -22,6 +24,8 @@ export function Canvas() {
   const [pendingFromNode, setPendingFromNode] = useState<{ wallId: string; endpoint: 'start' | 'end' } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isFurnitureDragging, setIsFurnitureDragging] = useState(false);
+
+  const furniturePlacement = useFurniturePlacement();
 
   useEffect(() => {
     if (state.room && state.room.walls.length === 0 && !isModalOpen) {
@@ -45,6 +49,13 @@ export function Canvas() {
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
   }, [setCanvasDimensions]);
+
+  // Reset furniture placement when switching tools
+  useEffect(() => {
+    if (editorState.activeTool !== 'placeFurniture') {
+      furniturePlacement.reset();
+    }
+  }, [editorState.activeTool, furniturePlacement]);
 
   const wallGeometries = useMemo(
     () => state.room ? calculateWallGeometries(state.room.walls, state.room.originWallId) : new Map(),
@@ -131,11 +142,33 @@ export function Canvas() {
   }
 
   function handleStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
+    if (editorState.activeTool === 'placeFurniture' && state.room) {
+      const stage = e.target.getStage();
+      if (!stage) return;
+
+      const newFurniture = furniturePlacement.handleStageClick(stage, editorState.viewport, state.room.unit);
+
+      if (newFurniture) {
+        dispatch({ type: 'ADD_FURNITURE', payload: newFurniture });
+        setActiveTool('select');
+      }
+      return;
+    }
+
     if (e.target === e.target.getStage()) {
       dispatch({
         type: 'SET_SELECTED_ENTITY',
         payload: { id: null, entityType: null },
       });
+    }
+  }
+
+  function handleStageMouseMove(e: Konva.KonvaEventObject<MouseEvent>) {
+    if (editorState.activeTool === 'placeFurniture' && state.room) {
+      const stage = e.target.getStage();
+      if (!stage) return;
+
+      furniturePlacement.handleStageMouseMove(stage, editorState.viewport, state.room.unit);
     }
   }
 
@@ -172,17 +205,18 @@ export function Canvas() {
         ref={stageRef}
         width={editorState.canvasDimensions.width}
         height={editorState.canvasDimensions.height}
-        draggable={!isFurnitureDragging}
+        draggable={!isFurnitureDragging && editorState.activeTool !== 'placeFurniture'}
         onDragStart={handleStageDragStart}
         onDragEnd={handleStageDragEnd}
         onWheel={handleWheel}
         onClick={handleStageClick}
         onTap={handleStageClick}
+        onMouseMove={handleStageMouseMove}
         x={editorState.viewport.offsetX}
         y={editorState.viewport.offsetY}
         scaleX={editorState.viewport.scale}
         scaleY={editorState.viewport.scale}
-        style={{ border: '1px solid #ddd', backgroundColor: '#fff' }}
+        style={{ border: '1px solid #ddd', backgroundColor: '#fff', cursor: editorState.activeTool === 'placeFurniture' ? 'crosshair' : 'default' }}
       >
         <Layer>
           {Array.from(wallGeometries.values()).map((geometry) => (
@@ -227,6 +261,31 @@ export function Canvas() {
               onDragEnd={(x, y) => handleFurnitureDragEnd(furniture.id, x, y)}
             />
           ))}
+
+          {furniturePlacement.furnitureStart && state.room && (
+            <Circle
+              x={toPixels(furniturePlacement.furnitureStart.x, state.room.unit)}
+              y={toPixels(furniturePlacement.furnitureStart.y, state.room.unit)}
+              radius={8}
+              stroke="#4A90E2"
+              strokeWidth={2}
+              listening={false}
+            />
+          )}
+
+          {furniturePlacement.previewRect && state.room && (
+            <Rect
+              x={toPixels(furniturePlacement.previewRect.x, state.room.unit)}
+              y={toPixels(furniturePlacement.previewRect.y, state.room.unit)}
+              width={toPixels(furniturePlacement.previewRect.width, state.room.unit)}
+              height={toPixels(furniturePlacement.previewRect.height, state.room.unit)}
+              stroke="#4A90E2"
+              strokeWidth={2}
+              dash={[5, 5]}
+              fill="rgba(74, 144, 226, 0.1)"
+              listening={false}
+            />
+          )}
         </Layer>
       </Stage>
 
