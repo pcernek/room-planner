@@ -5,6 +5,7 @@ import { INewDoor, INewFurniture } from '../types';
 
 export function Sidebar() {
   const { state, dispatch } = useRoom();
+  const [wallLength, setWallLength] = useState('');
   const [doorOffset, setDoorOffset] = useState('');
   const [doorWidth, setDoorWidth] = useState('');
   const [furnitureName, setFurnitureName] = useState('Sofa');
@@ -93,6 +94,27 @@ export function Sidebar() {
     });
   }
 
+  function handleUpdateWallLength() {
+    if (!state.selectedEntityId || state.selectedEntityType !== 'wall') return;
+
+    const lengthParsed = parseDimension(wallLength);
+
+    if (!lengthParsed) {
+      alert('Invalid dimension. Use format like "100 cm" or "3\' 6"');
+      return;
+    }
+
+    dispatch({
+      type: 'UPDATE_WALL',
+      payload: {
+        id: state.selectedEntityId,
+        updates: { length: lengthParsed.value, unit: lengthParsed.unit },
+      },
+    });
+
+    setWallLength('');
+  }
+
   function renderSelectedEntityPanel() {
     if (!state.selectedEntityId || !state.selectedEntityType) {
       return <div style={styles.noSelection}>No entity selected</div>;
@@ -108,20 +130,34 @@ export function Sidebar() {
       return (
         <div style={styles.propertyPanel}>
           <h3 style={styles.panelTitle}>Wall Properties</h3>
-          <div style={styles.property}>
-            <label style={styles.label}>Length:</label>
-            <span>{wall.length} {wall.unit}</span>
+          <div style={styles.propertyContent}>
+            <div style={styles.property}>
+              <label style={styles.label}>Length:</label>
+              <span>{wall.length} {wall.unit}</span>
+            </div>
+            <div>
+              <input
+                type="text"
+                value={wallLength}
+                onChange={(e) => setWallLength(e.target.value)}
+                placeholder="e.g. 200 cm or 6' 6&quot;"
+                style={styles.input}
+              />
+              <button onClick={handleUpdateWallLength} style={styles.button}>
+                Update Length
+              </button>
+            </div>
+            {isStandalone && (
+              <button onClick={handleRotateWall} style={styles.button}>
+                Rotate 90°
+              </button>
+            )}
+            {canDelete && (
+              <button onClick={handleDeleteSelected} style={styles.deleteButton}>
+                Delete Wall
+              </button>
+            )}
           </div>
-          {isStandalone && (
-            <button onClick={handleRotateWall} style={styles.button}>
-              Rotate 90°
-            </button>
-          )}
-          {canDelete && (
-            <button onClick={handleDeleteSelected} style={styles.deleteButton}>
-              Delete Wall
-            </button>
-          )}
         </div>
       );
     }
@@ -291,13 +327,17 @@ const styles: Record<string, React.CSSProperties> = {
   deleteButton: {
     width: '100%',
     padding: '10px',
-    marginTop: '10px',
     backgroundColor: '#E24A4A',
     color: '#fff',
     border: 'none',
     borderRadius: '4px',
     fontSize: '14px',
     cursor: 'pointer',
+  },
+  propertyContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
   },
   hint: {
     margin: '0 0 10px 0',
