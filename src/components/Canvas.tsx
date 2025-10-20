@@ -274,10 +274,10 @@ export function Canvas() {
           {activeWall && (
             <>
               {activeWallId === firstWallId && (
-                <Endpoint point={activeWall.startPoint} />
+                <Endpoint point={activeWall.startPoint} isFree />
               )}
               {activeWallId === lastWallId && (
-                <Endpoint point={activeWall.endPoint} />
+                <Endpoint point={activeWall.endPoint} isFree />
               )}
             </>
           )}
