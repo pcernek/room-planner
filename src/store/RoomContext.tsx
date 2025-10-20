@@ -29,6 +29,8 @@ type RoomAction =
 const initialState: IRoomState = {
   room: {
     originWallId: null,
+    firstWallId: null,
+    lastWallId: null,
     walls: [],
     doors: [],
     furniture: [],
@@ -55,6 +57,8 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
       let newWall: IWall;
       let updatedWalls = [...state.room.walls];
       let newOriginWallId = state.room.originWallId;
+      let newFirstWallId = state.room.firstWallId;
+      let newLastWallId = state.room.lastWallId;
 
       if (!fromNode) {
         newWall = {
@@ -64,6 +68,8 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
         };
         updatedWalls.push(newWall);
         newOriginWallId = newOriginWallId || newWallId;
+        newFirstWallId = newFirstWallId || newWallId;
+        newLastWallId = newLastWallId || newWallId;
       } else if (fromNode.endpoint === 'start') {
         newWall = {
           id: newWallId,
@@ -77,6 +83,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
             : wall
         );
         updatedWalls.unshift(newWall);
+        newFirstWallId = newWallId;
       } else {
         newWall = {
           id: newWallId,
@@ -84,11 +91,12 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
           ...wallData,
         };
         updatedWalls.push(newWall);
+        newLastWallId = newWallId;
       }
 
       return {
         ...state,
-        room: { ...state.room, walls: updatedWalls, originWallId: newOriginWallId },
+        room: { ...state.room, walls: updatedWalls, originWallId: newOriginWallId, firstWallId: newFirstWallId, lastWallId: newLastWallId },
         selectedEntityId: newWallId,
         selectedEntityType: 'wall',
       };
@@ -103,10 +111,29 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
 
     case 'DELETE_WALL': {
       const newWalls = state.room.walls.filter(wall => wall.id !== action.payload);
-      const newOriginWallId = state.room.originWallId === action.payload ? null : state.room.originWallId;
+
+      let newOriginWallId = state.room.originWallId === action.payload ? null : state.room.originWallId;
+      let newFirstWallId: string | null = null;
+      let newLastWallId: string | null = null;
+
+      if (newWalls.length > 0) {
+        newFirstWallId = newWalls.find(wall => !wall.previousWallId)?.id || null;
+
+        const wallsPointingToOthers = new Set(
+          newWalls
+            .filter(wall => wall.previousWallId)
+            .map(wall => wall.previousWallId)
+        );
+        newLastWallId = newWalls.find(wall => !wallsPointingToOthers.has(wall.id))?.id || null;
+
+        if (newOriginWallId && !newWalls.find(wall => wall.id === newOriginWallId)) {
+          newOriginWallId = newFirstWallId;
+        }
+      }
+
       return {
         ...state,
-        room: { ...state.room, walls: newWalls, originWallId: newOriginWallId },
+        room: { ...state.room, walls: newWalls, originWallId: newOriginWallId, firstWallId: newFirstWallId, lastWallId: newLastWallId },
       };
     }
 

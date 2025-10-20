@@ -39,28 +39,17 @@ export function Canvas() {
 
   const freeEndpoints = useMemo(() => {
     const free = new Set<string>();
-    const connected = new Set<string>();
 
-    state.room.walls.forEach(wall => {
-      if (wall.previousWallId) {
-        connected.add(`${wall.previousWallId}-end`);
-      }
-    });
+    if (state.room.firstWallId) {
+      free.add(`${state.room.firstWallId}-start`);
+    }
 
-    wallGeometries.forEach((geometry) => {
-      const startKey = `${geometry.id}-start`;
-      const endKey = `${geometry.id}-end`;
-
-      if (!connected.has(startKey)) {
-        free.add(startKey);
-      }
-      if (!connected.has(endKey)) {
-        free.add(endKey);
-      }
-    });
+    if (state.room.lastWallId) {
+      free.add(`${state.room.lastWallId}-end`);
+    }
 
     return free;
-  }, [state.room.walls, wallGeometries]);
+  }, [state.room.firstWallId, state.room.lastWallId]);
 
   function getNewWallButtonPositions() {
     const activeWallId = state.selectedEntityType === 'wall' && state.selectedEntityId
