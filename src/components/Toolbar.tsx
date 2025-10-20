@@ -7,7 +7,7 @@ import { calculateBoundingBox, calculateCenteredViewport } from '../utils/viewpo
 
 export function Toolbar() {
   const { state, dispatch } = useRoom();
-  const { state: editorState } = useEditor();
+  const { state: editorState, setViewport } = useEditor();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleExport() {
@@ -63,17 +63,11 @@ export function Toolbar() {
   }
 
   function handleZoomIn() {
-    dispatch({
-      type: 'SET_VIEWPORT',
-      payload: { scale: Math.min(5, state.viewport.scale * 1.2) },
-    });
+    setViewport({ scale: Math.min(5, editorState.viewport.scale * 1.2) });
   }
 
   function handleZoomOut() {
-    dispatch({
-      type: 'SET_VIEWPORT',
-      payload: { scale: Math.max(0.1, state.viewport.scale / 1.2) },
-    });
+    setViewport({ scale: Math.max(0.1, editorState.viewport.scale / 1.2) });
   }
 
   function handleRecenterView() {
@@ -81,10 +75,7 @@ export function Toolbar() {
     const { width, height } = editorState.canvasDimensions;
 
     if (state.room.walls.length === 0) {
-      dispatch({
-        type: 'SET_VIEWPORT',
-        payload: { offsetX: width / 2, offsetY: height / 2, scale: 1 },
-      });
+      setViewport({ offsetX: width / 2, offsetY: height / 2, scale: 1 });
       return;
     }
 
@@ -92,10 +83,7 @@ export function Toolbar() {
     const boundingBox = calculateBoundingBox(wallGeometries, state.room);
     const viewport = calculateCenteredViewport(boundingBox, width, height, BUFFER);
 
-    dispatch({
-      type: 'SET_VIEWPORT',
-      payload: viewport,
-    });
+    setViewport(viewport);
   }
 
   return (
@@ -126,7 +114,7 @@ export function Toolbar() {
         <button onClick={handleZoomOut} style={styles.button}>
           −
         </button>
-        <span style={styles.zoomDisplay}>{Math.round(state.viewport.scale * 100)}%</span>
+        <span style={styles.zoomDisplay}>{Math.round(editorState.viewport.scale * 100)}%</span>
         <button onClick={handleZoomIn} style={styles.button}>
           +
         </button>

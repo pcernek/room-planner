@@ -12,7 +12,7 @@ import { NewWallModal } from './NewWallModal';
 
 export function Canvas() {
   const { state, dispatch } = useRoom();
-  const { state: editorState, setCanvasDimensions } = useEditor();
+  const { state: editorState, setCanvasDimensions, setViewport } = useEditor();
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredWallId, setHoveredWallId] = useState<string | null>(null);
@@ -135,23 +135,17 @@ export function Canvas() {
   function handleStageDragEnd(e: Konva.KonvaEventObject<DragEvent>) {
     setIsDragging(false);
     const stage = e.target as Konva.Stage;
-    dispatch({
-      type: 'SET_VIEWPORT',
-      payload: {
-        offsetX: stage.x(),
-        offsetY: stage.y(),
-      },
+    setViewport({
+      offsetX: stage.x(),
+      offsetY: stage.y(),
     });
   }
 
   function handleWheel(e: Konva.KonvaEventObject<WheelEvent>) {
     e.evt.preventDefault();
     const delta = e.evt.deltaY > 0 ? 0.95 : 1.05;
-    const newScale = Math.max(0.1, Math.min(5, state.viewport.scale * delta));
-    dispatch({
-      type: 'SET_VIEWPORT',
-      payload: { scale: newScale },
-    });
+    const newScale = Math.max(0.1, Math.min(5, editorState.viewport.scale * delta));
+    setViewport({ scale: newScale });
   }
 
   function handleWallClick(wallId: string, e: Konva.KonvaEventObject<MouseEvent>) {
@@ -173,10 +167,10 @@ export function Canvas() {
         onWheel={handleWheel}
         onClick={handleStageClick}
         onTap={handleStageClick}
-        x={state.viewport.offsetX}
-        y={state.viewport.offsetY}
-        scaleX={state.viewport.scale}
-        scaleY={state.viewport.scale}
+        x={editorState.viewport.offsetX}
+        y={editorState.viewport.offsetY}
+        scaleX={editorState.viewport.scale}
+        scaleY={editorState.viewport.scale}
         style={{ border: '1px solid #ddd', backgroundColor: '#fff' }}
       >
         <Layer>

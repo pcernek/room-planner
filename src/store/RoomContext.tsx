@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { IRoom, IWall, IDoor, IFurniture, INewWall, INewDoor, INewFurniture, Tool, IViewport } from '../types';
+import { IRoom, IWall, IDoor, IFurniture, INewWall, INewDoor, INewFurniture, Tool } from '../types';
 import { addAngles } from '../utils/geometry';
 import { newEntityId } from '../utils/id';
 
@@ -8,7 +8,6 @@ interface IRoomState {
   selectedEntityId: string | null;
   selectedEntityType: 'wall' | 'door' | 'furniture' | null;
   activeTool: Tool;
-  viewport: IViewport;
 }
 
 type RoomAction =
@@ -23,8 +22,7 @@ type RoomAction =
   | { type: 'UPDATE_FURNITURE'; payload: { id: string; updates: Partial<IFurniture> } }
   | { type: 'DELETE_FURNITURE'; payload: string }
   | { type: 'SET_SELECTED_ENTITY'; payload: { id: string | null; entityType: 'wall' | 'door' | 'furniture' | null } }
-  | { type: 'SET_ACTIVE_TOOL'; payload: Tool }
-  | { type: 'SET_VIEWPORT'; payload: Partial<IViewport> };
+  | { type: 'SET_ACTIVE_TOOL'; payload: Tool };
 
 const initialState: IRoomState = {
   room: {
@@ -36,11 +34,6 @@ const initialState: IRoomState = {
   selectedEntityId: null,
   selectedEntityType: null,
   activeTool: 'select',
-  viewport: {
-    offsetX: 400,
-    offsetY: 400,
-    scale: 1,
-  },
 };
 
 function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
@@ -189,9 +182,6 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
 
     case 'SET_ACTIVE_TOOL':
       return { ...state, activeTool: action.payload };
-
-    case 'SET_VIEWPORT':
-      return { ...state, viewport: { ...state.viewport, ...action.payload } };
 
     default:
       return state;
