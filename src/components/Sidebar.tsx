@@ -105,6 +105,22 @@ export function Sidebar() {
     });
   }
 
+  function handleRotateFurniture() {
+    if (!state.room || !state.selectedEntityId || state.selectedEntityType !== 'furniture') return;
+
+    const furniture = state.room.furniture.find((f) => f.id === state.selectedEntityId);
+    if (!furniture) return;
+
+    const newRotation = (furniture.rotation + 90) % 360;
+    dispatch({
+      type: 'UPDATE_FURNITURE',
+      payload: {
+        id: state.selectedEntityId,
+        updates: { rotation: newRotation },
+      },
+    });
+  }
+
   function handleUpdateWallLength() {
     if (!state.selectedEntityId || state.selectedEntityType !== 'wall') return;
 
@@ -203,17 +219,22 @@ export function Sidebar() {
       return (
         <div style={styles.propertyPanel}>
           <h3 style={styles.panelTitle}>Furniture Properties</h3>
-          <div style={styles.property}>
-            <label style={styles.label}>Name:</label>
-            <span>{furniture.name}</span>
+          <div style={styles.propertyContent}>
+            <div style={styles.property}>
+              <label style={styles.label}>Name:</label>
+              <span>{furniture.name}</span>
+            </div>
+            <div style={styles.property}>
+              <label style={styles.label}>Size:</label>
+              <span>{furniture.width} × {furniture.height} {unitLabel}</span>
+            </div>
+            <button onClick={handleRotateFurniture} style={styles.button}>
+              Rotate 90°
+            </button>
+            <button onClick={handleDeleteSelected} style={styles.deleteButton}>
+              Delete Furniture
+            </button>
           </div>
-          <div style={styles.property}>
-            <label style={styles.label}>Size:</label>
-            <span>{furniture.width} × {furniture.height} {unitLabel}</span>
-          </div>
-          <button onClick={handleDeleteSelected} style={styles.deleteButton}>
-            Delete Furniture
-          </button>
         </div>
       );
     }

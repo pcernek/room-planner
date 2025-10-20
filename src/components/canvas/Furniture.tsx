@@ -6,6 +6,8 @@ import { toPixels, pointToPixels, fromPixels } from '../../utils/canvas';
 const FURNITURE_COLOR = '#4A90E2';
 const SELECTION_COLOR = '#FF6B6B';
 
+const TEXT_PADDING_PX = 8;
+
 interface IProps {
   furniture: IFurniture;
   unit: Unit;
@@ -19,6 +21,12 @@ export function Furniture({ furniture, unit, isSelected, onSelect, onDragStart, 
   const width = furniture.width;
   const height = furniture.height;
   const positionPixels = pointToPixels(furniture.position, unit);
+
+  // Calculate bounding box for rotated rectangle
+  const rotationRad = (furniture.rotation * Math.PI) / 180;
+  const widthPixels = toPixels(width, unit);
+  const heightPixels = toPixels(height, unit);
+  const boundingWidth = Math.abs(widthPixels * Math.cos(rotationRad)) + Math.abs(heightPixels * Math.sin(rotationRad));
 
   const handleMouseEnter = (e: Konva.KonvaEventObject<MouseEvent>) => {
     const container = e.target.getStage()?.container();
@@ -34,7 +42,6 @@ export function Furniture({ furniture, unit, isSelected, onSelect, onDragStart, 
     <Group
       x={positionPixels.x}
       y={positionPixels.y}
-      rotation={furniture.rotation}
       draggable
       onClick={onSelect}
       onTap={onSelect}
@@ -53,19 +60,29 @@ export function Furniture({ furniture, unit, isSelected, onSelect, onDragStart, 
         onDragEnd(fromPixels(node.x(), unit), fromPixels(node.y(), unit));
       }}
     >
-      <Rect
-        width={toPixels(width, unit)}
-        height={toPixels(height, unit)}
-        fill={isSelected ? SELECTION_COLOR : FURNITURE_COLOR}
-        stroke="#FFF"
-        strokeWidth={2}
-      />
+      <Group
+        rotation={furniture.rotation}
+        offsetX={toPixels(width, unit) / 2}
+        offsetY={toPixels(height, unit) / 2}
+      >
+        <Rect
+          width={toPixels(width, unit)}
+          height={toPixels(height, unit)}
+          fill={FURNITURE_COLOR}
+          stroke={isSelected ? SELECTION_COLOR : "#FFF"}
+          strokeWidth={1}
+        // dash={isSelected ? [10, 5] : undefined}
+        />
+      </Group>
       <Text
         text={furniture.name}
-        x={5}
-        y={5}
         fontSize={12}
         fill="#FFF"
+        x={-boundingWidth / 2 + TEXT_PADDING_PX}
+        y={-6}
+        width={boundingWidth - 16}
+        align="center"
+        listening={false}
       />
     </Group>
   );
