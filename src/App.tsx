@@ -1,22 +1,25 @@
 import React from 'react';
 import { RoomProvider } from './store/RoomContext';
+import { EditorProvider } from './store/EditorContext';
 import { Toolbar } from './components/Toolbar';
 import { Sidebar } from './components/Sidebar';
 import { Canvas } from './components/Canvas';
 
 function App() {
   return (
-    <RoomProvider>
-      <div style={styles.container}>
-        <Toolbar />
-        <div style={styles.mainContent}>
-          <Sidebar />
-          <div style={styles.canvasContainer}>
-            <Canvas />
+    <EditorProvider>
+      <RoomProvider>
+        <div style={styles.container}>
+          <Toolbar />
+          <div style={styles.mainContent}>
+            <Sidebar />
+            <div style={styles.canvasContainer}>
+              <Canvas />
+            </div>
           </div>
         </div>
-      </div>
-    </RoomProvider>
+      </RoomProvider>
+    </EditorProvider>
   );
 }
 
@@ -35,11 +38,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   canvasContainer: {
     flex: 1,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#fafafa',
     overflow: 'hidden',
+    position: 'relative',
   },
 };
 

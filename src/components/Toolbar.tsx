@@ -1,9 +1,13 @@
 import React, { useRef } from 'react';
 import { useRoom } from '../store/RoomContext';
+import { useEditor } from '../store/EditorContext';
 import { IRoom } from '../types';
+import { calculateWallGeometries } from '../utils/geometry';
+import { calculateBoundingBox, calculateCenteredViewport } from '../utils/viewport';
 
 export function Toolbar() {
   const { state, dispatch } = useRoom();
+  const { state: editorState } = useEditor();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleExport() {
@@ -72,10 +76,25 @@ export function Toolbar() {
     });
   }
 
-  function handleResetView() {
+  function handleRecenterView() {
+    const BUFFER = 80;
+    const { width, height } = editorState.canvasDimensions;
+
+    if (state.room.walls.length === 0) {
+      dispatch({
+        type: 'SET_VIEWPORT',
+        payload: { offsetX: width / 2, offsetY: height / 2, scale: 1 },
+      });
+      return;
+    }
+
+    const wallGeometries = calculateWallGeometries(state.room.walls, state.room.originWallId);
+    const boundingBox = calculateBoundingBox(wallGeometries, state.room);
+    const viewport = calculateCenteredViewport(boundingBox, width, height, BUFFER);
+
     dispatch({
       type: 'SET_VIEWPORT',
-      payload: { offsetX: 400, offsetY: 400, scale: 1 },
+      payload: viewport,
     });
   }
 
@@ -111,8 +130,8 @@ export function Toolbar() {
         <button onClick={handleZoomIn} style={styles.button}>
           +
         </button>
-        <button onClick={handleResetView} style={styles.button}>
-          Reset View
+        <button onClick={handleRecenterView} style={styles.button}>
+          Recenter View
         </button>
       </div>
     </div>

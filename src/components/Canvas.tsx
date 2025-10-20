@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { Stage, Layer } from 'react-konva';
 import Konva from 'konva';
 import { useRoom } from '../store/RoomContext';
+import { useEditor } from '../store/EditorContext';
 import { calculateWallGeometries } from '../utils/geometry';
 import { INewWall, Unit } from '../types';
 import { Wall } from './canvas/Wall';
@@ -11,7 +12,9 @@ import { NewWallModal } from './NewWallModal';
 
 export function Canvas() {
   const { state, dispatch } = useRoom();
+  const { state: editorState, setCanvasDimensions } = useEditor();
   const stageRef = useRef<Konva.Stage>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredWallId, setHoveredWallId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingWallAngle, setPendingWallAngle] = useState<number>(0);
@@ -25,6 +28,21 @@ export function Canvas() {
       setPendingFromNode(null);
     }
   }, [state.room.walls.length, isModalOpen]);
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        setCanvasDimensions({
+          width: containerRef.current.offsetWidth,
+          height: containerRef.current.offsetHeight,
+        });
+      }
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, [setCanvasDimensions]);
 
   const wallGeometries = useMemo(
     () => calculateWallGeometries(state.room.walls, state.room.originWallId),
@@ -144,11 +162,11 @@ export function Canvas() {
   }
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
+    <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
       <Stage
         ref={stageRef}
-        width={1200}
-        height={800}
+        width={editorState.canvasDimensions.width}
+        height={editorState.canvasDimensions.height}
         draggable
         onDragStart={handleStageDragStart}
         onDragEnd={handleStageDragEnd}
