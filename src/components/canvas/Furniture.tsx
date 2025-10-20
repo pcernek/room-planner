@@ -10,10 +10,11 @@ interface IProps {
   furniture: IFurniture;
   isSelected: boolean;
   onSelect: () => void;
+  onDragStart: () => void;
   onDragEnd: (x: number, y: number) => void;
 }
 
-export function Furniture({ furniture, isSelected, onSelect, onDragEnd }: IProps) {
+export function Furniture({ furniture, isSelected, onSelect, onDragStart, onDragEnd }: IProps) {
   const widthInCm = toCm(furniture.width, furniture.unit);
   const heightInCm = toCm(furniture.height, furniture.unit);
 
@@ -25,7 +26,15 @@ export function Furniture({ furniture, isSelected, onSelect, onDragEnd }: IProps
       draggable
       onClick={onSelect}
       onTap={onSelect}
+      onDragStart={(e) => {
+        e.cancelBubble = true;
+        onDragStart();
+      }}
+      onDragMove={(e) => {
+        e.cancelBubble = true;
+      }}
       onDragEnd={(e) => {
+        e.cancelBubble = true;
         const node = e.target;
         onDragEnd(node.x() / PIXELS_PER_CM, node.y() / PIXELS_PER_CM);
       }}

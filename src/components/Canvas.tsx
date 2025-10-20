@@ -20,6 +20,7 @@ export function Canvas() {
   const [pendingWallAngle, setPendingWallAngle] = useState<number>(0);
   const [pendingFromNode, setPendingFromNode] = useState<{ wallId: string; endpoint: 'start' | 'end' } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isFurnitureDragging, setIsFurnitureDragging] = useState(false);
 
   useEffect(() => {
     if (state.room.walls.length === 0 && !isModalOpen) {
@@ -80,7 +81,12 @@ export function Canvas() {
     });
   }
 
-  function handleFurnitureDrag(furnitureId: string, x: number, y: number) {
+  function handleFurnitureDragStart() {
+    setIsFurnitureDragging(true);
+  }
+
+  function handleFurnitureDragEnd(furnitureId: string, x: number, y: number) {
+    setIsFurnitureDragging(false);
     dispatch({
       type: 'UPDATE_FURNITURE',
       payload: {
@@ -161,7 +167,7 @@ export function Canvas() {
         ref={stageRef}
         width={editorState.canvasDimensions.width}
         height={editorState.canvasDimensions.height}
-        draggable
+        draggable={!isFurnitureDragging}
         onDragStart={handleStageDragStart}
         onDragEnd={handleStageDragEnd}
         onWheel={handleWheel}
@@ -209,7 +215,8 @@ export function Canvas() {
               furniture={furniture}
               isSelected={state.selectedEntityId === furniture.id && state.selectedEntityType === 'furniture'}
               onSelect={() => handleFurnitureSelect(furniture.id)}
-              onDragEnd={(x, y) => handleFurnitureDrag(furniture.id, x, y)}
+              onDragStart={handleFurnitureDragStart}
+              onDragEnd={(x, y) => handleFurnitureDragEnd(furniture.id, x, y)}
             />
           ))}
         </Layer>
