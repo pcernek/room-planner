@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useRoom } from '../store/RoomContext';
 import { INewDoor, INewFurniture } from '../types';
+import { WallPropertiesPanel } from './properties/WallPropertiesPanel';
+import { DoorPropertiesPanel } from './properties/DoorPropertiesPanel';
+import { FurniturePropertiesPanel } from './properties/FurniturePropertiesPanel';
 
 export function Sidebar() {
   const { state, dispatch } = useRoom();
@@ -88,27 +91,24 @@ export function Sidebar() {
     dispatch({ type: 'SET_SELECTED_ENTITY', payload: { id: null, entityType: null } });
   }
 
-  function handleUpdateWall(updates: { length?: number; angle?: number }) {
-    if (!state.selectedEntityId || state.selectedEntityType !== 'wall') return;
+  function handleUpdateWall(id: string, updates: { length?: number; angle?: number }) {
     dispatch({
       type: 'UPDATE_WALL',
-      payload: { id: state.selectedEntityId, updates },
+      payload: { id, updates },
     });
   }
 
-  function handleUpdateDoor(updates: { offsetFromStart?: number; width?: number }) {
-    if (!state.selectedEntityId || state.selectedEntityType !== 'door') return;
+  function handleUpdateDoor(id: string, updates: { offsetFromStart?: number; width?: number }) {
     dispatch({
       type: 'UPDATE_DOOR',
-      payload: { id: state.selectedEntityId, updates },
+      payload: { id, updates },
     });
   }
 
-  function handleUpdateFurniture(updates: { name?: string; width?: number; height?: number; rotation?: number }) {
-    if (!state.selectedEntityId || state.selectedEntityType !== 'furniture') return;
+  function handleUpdateFurniture(id: string, updates: { name?: string; width?: number; height?: number; rotation?: number }) {
     dispatch({
       type: 'UPDATE_FURNITURE',
-      payload: { id: state.selectedEntityId, updates },
+      payload: { id, updates },
     });
   }
 
@@ -125,48 +125,14 @@ export function Sidebar() {
       const isStandalone = state.room.walls.length === 1;
 
       return (
-        <div style={styles.propertyPanel}>
-          <h3 style={styles.panelTitle}>Wall Properties</h3>
-          <div style={styles.propertyContent}>
-            <div style={styles.propertyColumn}>
-              <label style={styles.label}>Length ({unitLabel})</label>
-              <input
-                type="number"
-                step="any"
-                value={wall.length}
-                onChange={(e) => {
-                  const value = parseFloat(e.target.value);
-                  if (!isNaN(value) && value > 0) {
-                    handleUpdateWall({ length: value });
-                  }
-                }}
-                style={styles.input}
-              />
-            </div>
-            {isStandalone && (
-              <div style={styles.propertyColumn}>
-                <label style={styles.label}>Angle (°)</label>
-                <input
-                  type="number"
-                  step="any"
-                  value={wall.angle}
-                  onChange={(e) => {
-                    const value = parseFloat(e.target.value);
-                    if (!isNaN(value)) {
-                      handleUpdateWall({ angle: value % 360 });
-                    }
-                  }}
-                  style={styles.input}
-                />
-              </div>
-            )}
-            {canDelete && (
-              <button onClick={handleDeleteSelected} style={styles.deleteButton}>
-                Delete Wall
-              </button>
-            )}
-          </div>
-        </div>
+        <WallPropertiesPanel
+          wall={wall}
+          unit={state.room.unit}
+          canDelete={canDelete}
+          isStandalone={isStandalone}
+          onUpdate={handleUpdateWall}
+          onDelete={handleDeleteSelected}
+        />
       );
     }
 
@@ -175,44 +141,12 @@ export function Sidebar() {
       if (!door) return null;
 
       return (
-        <div style={styles.propertyPanel}>
-          <h3 style={styles.panelTitle}>Door Properties</h3>
-          <div style={styles.propertyContent}>
-            <div style={styles.propertyColumn}>
-              <label style={styles.label}>Offset ({unitLabel})</label>
-              <input
-                type="number"
-                step="any"
-                value={door.offsetFromStart}
-                onChange={(e) => {
-                  const value = parseFloat(e.target.value);
-                  if (!isNaN(value) && value >= 0) {
-                    handleUpdateDoor({ offsetFromStart: value });
-                  }
-                }}
-                style={styles.input}
-              />
-            </div>
-            <div style={styles.propertyColumn}>
-              <label style={styles.label}>Width ({unitLabel})</label>
-              <input
-                type="number"
-                step="any"
-                value={door.width}
-                onChange={(e) => {
-                  const value = parseFloat(e.target.value);
-                  if (!isNaN(value) && value > 0) {
-                    handleUpdateDoor({ width: value });
-                  }
-                }}
-                style={styles.input}
-              />
-            </div>
-            <button onClick={handleDeleteSelected} style={styles.deleteButton}>
-              Delete Door
-            </button>
-          </div>
-        </div>
+        <DoorPropertiesPanel
+          door={door}
+          unit={state.room.unit}
+          onUpdate={handleUpdateDoor}
+          onDelete={handleDeleteSelected}
+        />
       );
     }
 
@@ -221,68 +155,12 @@ export function Sidebar() {
       if (!furniture) return null;
 
       return (
-        <div style={styles.propertyPanel}>
-          <h3 style={styles.panelTitle}>Furniture Properties</h3>
-          <div style={styles.propertyContent}>
-            <div style={styles.propertyColumn}>
-              <label style={styles.label}>Name</label>
-              <input
-                type="text"
-                value={furniture.name}
-                onChange={(e) => handleUpdateFurniture({ name: e.target.value })}
-                style={styles.input}
-              />
-            </div>
-            <div style={styles.propertyColumn}>
-              <label style={styles.label}>Width ({unitLabel})</label>
-              <input
-                type="number"
-                step="any"
-                value={furniture.width}
-                onChange={(e) => {
-                  const value = parseFloat(e.target.value);
-                  if (!isNaN(value) && value > 0) {
-                    handleUpdateFurniture({ width: value });
-                  }
-                }}
-                style={styles.input}
-              />
-            </div>
-            <div style={styles.propertyColumn}>
-              <label style={styles.label}>Height ({unitLabel})</label>
-              <input
-                type="number"
-                step="any"
-                value={furniture.height}
-                onChange={(e) => {
-                  const value = parseFloat(e.target.value);
-                  if (!isNaN(value) && value > 0) {
-                    handleUpdateFurniture({ height: value });
-                  }
-                }}
-                style={styles.input}
-              />
-            </div>
-            <div style={styles.propertyColumn}>
-              <label style={styles.label}>Rotation (°)</label>
-              <input
-                type="number"
-                step="any"
-                value={furniture.rotation}
-                onChange={(e) => {
-                  const value = parseFloat(e.target.value);
-                  if (!isNaN(value)) {
-                    handleUpdateFurniture({ rotation: value % 360 });
-                  }
-                }}
-                style={styles.input}
-              />
-            </div>
-            <button onClick={handleDeleteSelected} style={styles.deleteButton}>
-              Delete Furniture
-            </button>
-          </div>
-        </div>
+        <FurniturePropertiesPanel
+          furniture={furniture}
+          unit={state.room.unit}
+          onUpdate={handleUpdateFurniture}
+          onDelete={handleDeleteSelected}
+        />
       );
     }
 
@@ -400,51 +278,11 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '14px',
     cursor: 'pointer',
   },
-  deleteButton: {
-    width: '100%',
-    padding: '10px',
-    backgroundColor: '#E24A4A',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    fontSize: '14px',
-    cursor: 'pointer',
-  },
-  propertyContent: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-  },
-  propertyColumn: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '5px',
-  },
   hint: {
     margin: '0 0 10px 0',
     fontSize: '12px',
     color: '#999',
     fontStyle: 'italic',
-  },
-  propertyPanel: {
-    backgroundColor: '#fff',
-    padding: '15px',
-    borderRadius: '4px',
-  },
-  panelTitle: {
-    margin: '0 0 15px 0',
-    fontSize: '16px',
-    fontWeight: 'normal',
-    color: '#333',
-  },
-  property: {
-    marginBottom: '10px',
-    display: 'flex',
-    justifyContent: 'space-between',
-  },
-  label: {
-    fontWeight: 'bold',
-    color: '#666',
   },
   noSelection: {
     padding: '15px',
