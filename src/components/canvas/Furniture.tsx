@@ -1,27 +1,28 @@
 import { Rect, Text, Group } from 'react-konva';
-import { IFurniture } from '../../types';
-import { toCm } from '../../utils/units';
+import { IFurniture, Unit } from '../../types';
+import { toPixels, pointToPixels, fromPixels } from '../../utils/canvas';
 
-const PIXELS_PER_CM = 2;
 const FURNITURE_COLOR = '#4A90E2';
 const SELECTION_COLOR = '#FF6B6B';
 
 interface IProps {
   furniture: IFurniture;
+  unit: Unit;
   isSelected: boolean;
   onSelect: () => void;
   onDragStart: () => void;
   onDragEnd: (x: number, y: number) => void;
 }
 
-export function Furniture({ furniture, isSelected, onSelect, onDragStart, onDragEnd }: IProps) {
-  const widthInCm = toCm(furniture.width, furniture.unit);
-  const heightInCm = toCm(furniture.height, furniture.unit);
+export function Furniture({ furniture, unit, isSelected, onSelect, onDragStart, onDragEnd }: IProps) {
+  const width = furniture.width;
+  const height = furniture.height;
+  const positionPixels = pointToPixels(furniture.position, unit);
 
   return (
     <Group
-      x={furniture.position.x * PIXELS_PER_CM}
-      y={furniture.position.y * PIXELS_PER_CM}
+      x={positionPixels.x}
+      y={positionPixels.y}
       rotation={furniture.rotation}
       draggable
       onClick={onSelect}
@@ -36,12 +37,12 @@ export function Furniture({ furniture, isSelected, onSelect, onDragStart, onDrag
       onDragEnd={(e) => {
         e.cancelBubble = true;
         const node = e.target;
-        onDragEnd(node.x() / PIXELS_PER_CM, node.y() / PIXELS_PER_CM);
+        onDragEnd(fromPixels(node.x(), unit), fromPixels(node.y(), unit));
       }}
     >
       <Rect
-        width={widthInCm * PIXELS_PER_CM}
-        height={heightInCm * PIXELS_PER_CM}
+        width={toPixels(width, unit)}
+        height={toPixels(height, unit)}
         fill={isSelected ? SELECTION_COLOR : FURNITURE_COLOR}
         stroke="#FFF"
         strokeWidth={2}

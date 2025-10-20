@@ -3,15 +3,17 @@ import { Unit } from '../types';
 
 interface IProps {
   isOpen: boolean;
+  unit: Unit;
   onConfirm: (length: number, unit: Unit) => void;
   onCancel: () => void;
 }
 
-export function NewWallModal({ isOpen, onConfirm, onCancel }: IProps) {
+export function NewWallModal({ isOpen, unit, onConfirm, onCancel }: IProps) {
   const [length, setLength] = useState('');
-  const [unit, setUnit] = useState<Unit>('cm');
 
   if (!isOpen) return null;
+
+  const unitLabel = unit === 'cm' ? 'cm' : 'in';
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -32,39 +34,17 @@ export function NewWallModal({ isOpen, onConfirm, onCancel }: IProps) {
   return (
     <div style={styles.overlay}>
       <div style={styles.modal}>
-        <h3 style={styles.title}>Enter Wall Length</h3>
+        <h3 style={styles.title}>Length of the first wall ({unitLabel})</h3>
         <form onSubmit={handleSubmit}>
           <input
             type="number"
             step="any"
-            placeholder="Length"
+            placeholder={`Length (${unitLabel})`}
             value={length}
             onChange={(e) => setLength(e.target.value)}
             style={styles.input}
             autoFocus
           />
-          <div style={styles.unitSelector}>
-            <label style={styles.radioLabel}>
-              <input
-                type="radio"
-                value="cm"
-                checked={unit === 'cm'}
-                onChange={(e) => setUnit(e.target.value as Unit)}
-                style={styles.radio}
-              />
-              cm
-            </label>
-            <label style={styles.radioLabel}>
-              <input
-                type="radio"
-                value="ft-in"
-                checked={unit === 'ft-in'}
-                onChange={(e) => setUnit(e.target.value as Unit)}
-                style={styles.radio}
-              />
-              feet/inches
-            </label>
-          </div>
           <div style={styles.buttons}>
             <button type="button" onClick={handleCancel} style={styles.cancelButton}>
               Cancel

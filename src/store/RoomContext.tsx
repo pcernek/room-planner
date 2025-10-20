@@ -1,16 +1,16 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
-import { IRoom, IWall, IDoor, IFurniture, INewWall, INewDoor, INewFurniture } from '../types';
+import { IRoom, IWall, IDoor, IFurniture, INewWall, INewDoor, INewFurniture, Unit } from '../types';
 import { addAngles } from '../utils/geometry';
 import { newEntityId } from '../utils/id';
 
 const LOCAL_STORAGE_KEY = 'room-planner-state';
 
-function loadRoomFromStorage(): IRoom {
+function loadRoomFromStorage(): IRoom | null {
   try {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (parsed && typeof parsed === 'object' && Array.isArray(parsed.walls)) {
+      if (parsed && typeof parsed === 'object' && Array.isArray(parsed.walls) && parsed.name && parsed.unit) {
         return parsed;
       }
     }
@@ -18,22 +18,18 @@ function loadRoomFromStorage(): IRoom {
     console.error('Failed to load room from localStorage:', error);
   }
 
-  return {
-    originWallId: null,
-    walls: [],
-    doors: [],
-    furniture: [],
-  };
+  return null;
 }
 
 interface IRoomState {
-  room: IRoom;
+  room: IRoom | null;
   selectedEntityId: string | null;
   selectedEntityType: 'wall' | 'door' | 'furniture' | null;
 }
 
 type RoomAction =
   | { type: 'SET_ROOM'; payload: IRoom }
+  | { type: 'INITIALIZE_ROOM'; payload: { name: string; unit: Unit } }
   | { type: 'ADD_WALL'; payload: INewWall }
   | { type: 'UPDATE_WALL'; payload: { id: string; updates: Partial<IWall> } }
   | { type: 'DELETE_WALL'; payload: string }
@@ -57,7 +53,22 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
     case 'SET_ROOM':
       return { ...state, room: action.payload };
 
+    case 'INITIALIZE_ROOM':
+      return {
+        ...state,
+        room: {
+          name: action.payload.name,
+          unit: action.payload.unit,
+          originWallId: null,
+          walls: [],
+          doors: [],
+          furniture: [],
+        },
+      };
+
     case 'ADD_WALL': {
+      if (!state.room) return state;
+
       const { fromNode, ...wallData } = action.payload;
       const newWallId = newEntityId();
 
@@ -104,6 +115,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
     }
 
     case 'UPDATE_WALL': {
+      if (!state.room) return state;
       const newWalls = state.room.walls.map(wall =>
         wall.id === action.payload.id ? { ...wall, ...action.payload.updates } : wall
       );
@@ -111,6 +123,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
     }
 
     case 'DELETE_WALL': {
+      if (!state.room) return state;
       const firstWallId = state.room.walls[0]?.id;
       const lastWallId = state.room.walls[state.room.walls.length - 1]?.id;
 
@@ -138,6 +151,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
     }
 
     case 'ADD_DOOR': {
+      if (!state.room) return state;
       const newDoor: IDoor = {
         id: newEntityId(),
         ...action.payload,
@@ -152,6 +166,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
     }
 
     case 'UPDATE_DOOR': {
+      if (!state.room) return state;
       const newDoors = state.room.doors.map(door =>
         door.id === action.payload.id ? { ...door, ...action.payload.updates } : door
       );
@@ -159,11 +174,13 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
     }
 
     case 'DELETE_DOOR': {
+      if (!state.room) return state;
       const newDoors = state.room.doors.filter(door => door.id !== action.payload);
       return { ...state, room: { ...state.room, doors: newDoors } };
     }
 
     case 'ADD_FURNITURE': {
+      if (!state.room) return state;
       const newFurnitureItem: IFurniture = {
         id: newEntityId(),
         ...action.payload,
@@ -178,6 +195,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
     }
 
     case 'UPDATE_FURNITURE': {
+      if (!state.room) return state;
       const newFurniture = state.room.furniture.map(furniture =>
         furniture.id === action.payload.id ? { ...furniture, ...action.payload.updates } : furniture
       );
@@ -185,6 +203,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
     }
 
     case 'DELETE_FURNITURE': {
+      if (!state.room) return state;
       const newFurniture = state.room.furniture.filter(furniture => furniture.id !== action.payload);
       return { ...state, room: { ...state.room, furniture: newFurniture } };
     }
@@ -199,12 +218,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
     case 'CLEAR_ROOM':
       return {
         ...state,
-        room: {
-          originWallId: null,
-          walls: [],
-          doors: [],
-          furniture: [],
-        },
+        room: null,
         selectedEntityId: null,
         selectedEntityType: null,
       };

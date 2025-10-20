@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useRoom } from '../store/RoomContext';
-import { parseDimension } from '../utils/units';
 import { INewDoor, INewFurniture } from '../types';
 
 export function Sidebar() {
@@ -12,25 +11,37 @@ export function Sidebar() {
   const [furnitureWidth, setFurnitureWidth] = useState('');
   const [furnitureHeight, setFurnitureHeight] = useState('');
 
+  if (!state.room) {
+    return (
+      <div style={styles.sidebar}>
+        <h2 style={styles.title}>Room Planner</h2>
+        <div style={styles.noSelection}>Create a room to start planning</div>
+      </div>
+    );
+  }
+
+  const unit = state.room.unit;
+  const unitLabel = unit === 'cm' ? 'cm' : 'in';
+
   function handleAddDoor() {
     if (!state.selectedEntityId || state.selectedEntityType !== 'wall') {
       alert('Please select a wall first');
       return;
     }
 
-    const offsetParsed = parseDimension(doorOffset);
-    const widthParsed = parseDimension(doorWidth);
+    const offsetValue = parseFloat(doorOffset);
+    const widthValue = parseFloat(doorWidth);
 
-    if (!offsetParsed || !widthParsed) {
-      alert('Invalid dimension. Use format like "100 cm" or "3\' 6"');
+    if (isNaN(offsetValue) || offsetValue <= 0 || isNaN(widthValue) || widthValue <= 0) {
+      alert(`Please enter valid dimensions in ${unitLabel}`);
       return;
     }
 
     const newDoor: INewDoor = {
       wallId: state.selectedEntityId,
-      offsetFromStart: offsetParsed.value,
-      width: widthParsed.value,
-      unit: offsetParsed.unit,
+      offsetFromStart: offsetValue,
+      width: widthValue,
+      unit,
     };
 
     dispatch({ type: 'ADD_DOOR', payload: newDoor });
@@ -39,21 +50,21 @@ export function Sidebar() {
   }
 
   function handleAddFurniture() {
-    const widthParsed = parseDimension(furnitureWidth);
-    const heightParsed = parseDimension(furnitureHeight);
+    const widthValue = parseFloat(furnitureWidth);
+    const heightValue = parseFloat(furnitureHeight);
 
-    if (!widthParsed || !heightParsed) {
-      alert('Invalid dimension. Use format like "100 cm" or "3\' 6"');
+    if (isNaN(widthValue) || widthValue <= 0 || isNaN(heightValue) || heightValue <= 0) {
+      alert(`Please enter valid dimensions in ${unitLabel}`);
       return;
     }
 
     const newFurniture: INewFurniture = {
       name: furnitureName,
       position: { x: 50, y: 50 },
-      width: widthParsed.value,
-      height: heightParsed.value,
+      width: widthValue,
+      height: heightValue,
       rotation: 0,
-      unit: widthParsed.unit,
+      unit,
     };
 
     dispatch({ type: 'ADD_FURNITURE', payload: newFurniture });
@@ -79,7 +90,7 @@ export function Sidebar() {
   }
 
   function handleRotateWall() {
-    if (!state.selectedEntityId || state.selectedEntityType !== 'wall') return;
+    if (!state.room || !state.selectedEntityId || state.selectedEntityType !== 'wall') return;
 
     const wall = state.room.walls.find((w) => w.id === state.selectedEntityId);
     if (!wall) return;
@@ -97,10 +108,10 @@ export function Sidebar() {
   function handleUpdateWallLength() {
     if (!state.selectedEntityId || state.selectedEntityType !== 'wall') return;
 
-    const lengthParsed = parseDimension(wallLength);
+    const lengthValue = parseFloat(wallLength);
 
-    if (!lengthParsed) {
-      alert('Invalid dimension. Use format like "100 cm" or "3\' 6"');
+    if (isNaN(lengthValue) || lengthValue <= 0) {
+      alert(`Please enter a valid dimension in ${unitLabel}`);
       return;
     }
 
@@ -108,7 +119,7 @@ export function Sidebar() {
       type: 'UPDATE_WALL',
       payload: {
         id: state.selectedEntityId,
-        updates: { length: lengthParsed.value, unit: lengthParsed.unit },
+        updates: { length: lengthValue, unit },
       },
     });
 
@@ -116,7 +127,7 @@ export function Sidebar() {
   }
 
   function renderSelectedEntityPanel() {
-    if (!state.selectedEntityId || !state.selectedEntityType) {
+    if (!state.room || !state.selectedEntityId || !state.selectedEntityType) {
       return <div style={styles.noSelection}>No entity selected</div>;
     }
 
@@ -133,14 +144,15 @@ export function Sidebar() {
           <div style={styles.propertyContent}>
             <div style={styles.property}>
               <label style={styles.label}>Length:</label>
-              <span>{wall.length} {wall.unit}</span>
+              <span>{wall.length} {unitLabel}</span>
             </div>
             <div>
               <input
-                type="text"
+                type="number"
+                step="any"
                 value={wallLength}
                 onChange={(e) => setWallLength(e.target.value)}
-                placeholder="e.g. 200 cm or 6' 6&quot;"
+                placeholder={`e.g. ${unit === 'cm' ? '200' : '72'}`}
                 style={styles.input}
               />
               <button onClick={handleUpdateWallLength} style={styles.button}>
@@ -171,11 +183,11 @@ export function Sidebar() {
           <h3 style={styles.panelTitle}>Door Properties</h3>
           <div style={styles.property}>
             <label style={styles.label}>Offset:</label>
-            <span>{door.offsetFromStart} {door.unit}</span>
+            <span>{door.offsetFromStart} {unitLabel}</span>
           </div>
           <div style={styles.property}>
             <label style={styles.label}>Width:</label>
-            <span>{door.width} {door.unit}</span>
+            <span>{door.width} {unitLabel}</span>
           </div>
           <button onClick={handleDeleteSelected} style={styles.deleteButton}>
             Delete Door
@@ -197,11 +209,11 @@ export function Sidebar() {
           </div>
           <div style={styles.property}>
             <label style={styles.label}>Position:</label>
-            <span>({furniture.position.x.toFixed(1)}, {furniture.position.y.toFixed(1)})</span>
+            <span>({furniture.position.x.toFixed(1)}, {furniture.position.y.toFixed(1)}) {unitLabel}</span>
           </div>
           <div style={styles.property}>
             <label style={styles.label}>Size:</label>
-            <span>{furniture.width} × {furniture.height} {furniture.unit}</span>
+            <span>{furniture.width} × {furniture.height} {unitLabel}</span>
           </div>
           <div style={styles.property}>
             <label style={styles.label}>Rotation:</label>
@@ -225,15 +237,17 @@ export function Sidebar() {
         <h3 style={styles.sectionTitle}>Add Door</h3>
         <p style={styles.hint}>Select a wall first</p>
         <input
-          type="text"
-          placeholder="Offset (e.g. 50cm or 2')"
+          type="number"
+          step="any"
+          placeholder={`Offset (${unitLabel})`}
           value={doorOffset}
           onChange={(e) => setDoorOffset(e.target.value)}
           style={styles.input}
         />
         <input
-          type="text"
-          placeholder="Width (e.g. 80cm or 3')"
+          type="number"
+          step="any"
+          placeholder={`Width (${unitLabel})`}
           value={doorWidth}
           onChange={(e) => setDoorWidth(e.target.value)}
           style={styles.input}
@@ -253,15 +267,17 @@ export function Sidebar() {
           style={styles.input}
         />
         <input
-          type="text"
-          placeholder="Width (e.g. 200cm or 6')"
+          type="number"
+          step="any"
+          placeholder={`Width (${unitLabel})`}
           value={furnitureWidth}
           onChange={(e) => setFurnitureWidth(e.target.value)}
           style={styles.input}
         />
         <input
-          type="text"
-          placeholder="Height (e.g. 100cm or 3')"
+          type="number"
+          step="any"
+          placeholder={`Height (${unitLabel})`}
           value={furnitureHeight}
           onChange={(e) => setFurnitureHeight(e.target.value)}
           style={styles.input}

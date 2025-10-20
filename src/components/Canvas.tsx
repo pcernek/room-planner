@@ -9,6 +9,7 @@ import { Wall } from './canvas/Wall';
 import { Door } from './canvas/Door';
 import { Furniture } from './canvas/Furniture';
 import { NewWallModal } from './NewWallModal';
+import { RoomSetupModal } from './RoomSetupModal';
 
 export function Canvas() {
   const { state, dispatch } = useRoom();
@@ -23,12 +24,12 @@ export function Canvas() {
   const [isFurnitureDragging, setIsFurnitureDragging] = useState(false);
 
   useEffect(() => {
-    if (state.room.walls.length === 0 && !isModalOpen) {
+    if (state.room && state.room.walls.length === 0 && !isModalOpen) {
       setIsModalOpen(true);
       setPendingWallAngle(0);
       setPendingFromNode(null);
     }
-  }, [state.room.walls.length, isModalOpen]);
+  }, [state.room?.walls.length, isModalOpen]);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -46,19 +47,19 @@ export function Canvas() {
   }, [setCanvasDimensions]);
 
   const wallGeometries = useMemo(
-    () => calculateWallGeometries(state.room.walls, state.room.originWallId),
-    [state.room.walls, state.room.originWallId]
+    () => state.room ? calculateWallGeometries(state.room.walls, state.room.originWallId) : new Map(),
+    [state.room?.walls, state.room?.originWallId]
   );
 
   const [firstWallId, lastWallId] = useMemo(() => {
-    if (state.room.walls.length === 0) {
+    if (!state.room || state.room.walls.length === 0) {
       return [null, null];
     }
 
     const firstWall = state.room.walls[0]
     const lastWall = state.room.walls[state.room.walls.length - 1];
     return [firstWall?.id, lastWall?.id];
-  }, [state.room.walls.length]);
+  }, [state.room?.walls.length]);
 
   function handleWallSelect(wallId: string) {
     dispatch({
@@ -96,6 +97,10 @@ export function Canvas() {
     });
   }
 
+  function handleRoomSetup(name: string, unit: Unit) {
+    dispatch({ type: 'INITIALIZE_ROOM', payload: { name, unit } });
+  }
+
   function handleModalConfirm(length: number, unit: Unit) {
     const newWall: INewWall = {
       length,
@@ -112,7 +117,7 @@ export function Canvas() {
   }
 
   function handleModalCancel() {
-    if (state.room.walls.length > 0) {
+    if (state.room && state.room.walls.length > 0) {
       setIsModalOpen(false);
       setPendingWallAngle(0);
       setPendingFromNode(null);
@@ -184,6 +189,7 @@ export function Canvas() {
             <Wall
               key={geometry.id}
               geometry={geometry}
+              unit={state.room?.unit || 'cm'}
               isSelected={!hoveredWallId && state.selectedEntityId === geometry.id && state.selectedEntityType === 'wall'}
               isHovered={hoveredWallId === geometry.id}
               hasStartFree={geometry.id === firstWallId}
@@ -195,7 +201,7 @@ export function Canvas() {
             />
           ))}
 
-          {state.room.doors.map((door) => {
+          {state.room?.doors.map((door) => {
             const wallGeometry = wallGeometries.get(door.wallId);
             if (!wallGeometry) return null;
             return (
@@ -203,16 +209,18 @@ export function Canvas() {
                 key={door.id}
                 door={door}
                 wallGeometry={wallGeometry}
+                unit={state.room?.unit || 'cm'}
                 isSelected={state.selectedEntityId === door.id && state.selectedEntityType === 'door'}
                 onSelect={() => handleDoorSelect(door.id)}
               />
             );
           })}
 
-          {state.room.furniture.map((furniture) => (
+          {state.room?.furniture.map((furniture) => (
             <Furniture
               key={furniture.id}
               furniture={furniture}
+              unit={state.room?.unit || 'cm'}
               isSelected={state.selectedEntityId === furniture.id && state.selectedEntityType === 'furniture'}
               onSelect={() => handleFurnitureSelect(furniture.id)}
               onDragStart={handleFurnitureDragStart}
@@ -222,8 +230,14 @@ export function Canvas() {
         </Layer>
       </Stage>
 
+      <RoomSetupModal
+        isOpen={!state.room}
+        onConfirm={handleRoomSetup}
+      />
+
       <NewWallModal
-        isOpen={isModalOpen}
+        isOpen={isModalOpen && state.room !== null}
+        unit={state.room?.unit || 'cm'}
         onConfirm={handleModalConfirm}
         onCancel={handleModalCancel}
       />

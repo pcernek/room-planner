@@ -1,7 +1,5 @@
-import { IRoom, IWallGeometry, IViewport } from '../types';
-import { toCm } from './units';
-
-const PIXELS_PER_CM = 2;
+import { IRoom, IWallGeometry, IViewport, Unit } from '../types';
+import { toPixels } from './canvas';
 
 interface IBoundingBox {
   minX: number;
@@ -27,12 +25,11 @@ export function calculateBoundingBox(
   });
 
   room.furniture.forEach((furniture) => {
-    const widthCm = toCm(furniture.width, furniture.unit);
-    const heightCm = toCm(furniture.height, furniture.unit);
+    // All coordinates are already in the room's chosen unit
     minX = Math.min(minX, furniture.position.x);
     minY = Math.min(minY, furniture.position.y);
-    maxX = Math.max(maxX, furniture.position.x + widthCm);
-    maxY = Math.max(maxY, furniture.position.y + heightCm);
+    maxX = Math.max(maxX, furniture.position.x + furniture.width);
+    maxY = Math.max(maxY, furniture.position.y + furniture.height);
   });
 
   return { minX, minY, maxX, maxY };
@@ -42,14 +39,15 @@ export function calculateCenteredViewport(
   boundingBox: IBoundingBox,
   stageWidth: number,
   stageHeight: number,
-  buffer: number
+  buffer: number,
+  unit: Unit
 ): IViewport {
   const { minX, minY, maxX, maxY } = boundingBox;
 
-  const contentWidthCm = maxX - minX;
-  const contentHeightCm = maxY - minY;
-  const contentWidthPx = contentWidthCm * PIXELS_PER_CM;
-  const contentHeightPx = contentHeightCm * PIXELS_PER_CM;
+  const contentWidth = maxX - minX;
+  const contentHeight = maxY - minY;
+  const contentWidthPx = toPixels(contentWidth, unit);
+  const contentHeightPx = toPixels(contentHeight, unit);
 
   const availableWidth = stageWidth - 2 * buffer;
   const availableHeight = stageHeight - 2 * buffer;
@@ -61,8 +59,8 @@ export function calculateCenteredViewport(
   const contentCenterX = (minX + maxX) / 2;
   const contentCenterY = (minY + maxY) / 2;
 
-  const offsetX = stageWidth / 2 - contentCenterX * PIXELS_PER_CM * scale;
-  const offsetY = stageHeight / 2 - contentCenterY * PIXELS_PER_CM * scale;
+  const offsetX = stageWidth / 2 - toPixels(contentCenterX, unit) * scale;
+  const offsetY = stageHeight / 2 - toPixels(contentCenterY, unit) * scale;
 
   return { offsetX, offsetY, scale };
 }

@@ -1,19 +1,20 @@
 import { Line, Group } from 'react-konva';
 import Konva from 'konva';
-import { IWallGeometry } from '../../types';
+import { IWallGeometry, Unit } from '../../types';
 import { Endpoint } from './Endpoint';
 import { NewWallButton } from './NewWallButton';
+import { toPixels, pointToPixels, fromPixels } from '../../utils/canvas';
 
-const PIXELS_PER_CM = 2;
-const WALL_THICKNESS = 8;
+const WALL_THICKNESS_CM = 8;
 const WALL_COLOR = '#333';
 const HOVER_COLOR = '#FF6B6B';
 const SELECTION_COLOR = '#FF6B6B';
 const ARROW_BUTTON_SIZE = 40;
-const ARROW_BUTTON_DISTANCE = 50;
+const ARROW_BUTTON_DISTANCE_PX = 50;
 
 interface IProps {
   geometry: IWallGeometry;
+  unit: Unit;
   isSelected: boolean;
   isHovered: boolean;
   hasStartFree: boolean;
@@ -26,6 +27,7 @@ interface IProps {
 
 export function Wall({
   geometry,
+  unit,
   isSelected,
   isHovered,
   hasStartFree,
@@ -40,17 +42,21 @@ export function Wall({
   const perpendicularAngle1 = wallAngle + 90;
   const perpendicularAngle2 = wallAngle - 90;
 
+  const wallThickness = WALL_THICKNESS_CM / 2; // constant wall thickness
+  const startPixels = pointToPixels(geometry.startPoint, unit);
+  const endPixels = pointToPixels(geometry.endPoint, unit);
+
   return (
     <Group>
       <Line
         points={[
-          geometry.startPoint.x * PIXELS_PER_CM,
-          geometry.startPoint.y * PIXELS_PER_CM,
-          geometry.endPoint.x * PIXELS_PER_CM,
-          geometry.endPoint.y * PIXELS_PER_CM,
+          startPixels.x,
+          startPixels.y,
+          endPixels.x,
+          endPixels.y,
         ]}
         stroke={isSelected ? SELECTION_COLOR : isHovered ? HOVER_COLOR : WALL_COLOR}
-        strokeWidth={WALL_THICKNESS}
+        strokeWidth={wallThickness}
         lineCap="round"
         lineJoin="round"
         onClick={onSelect}
@@ -61,6 +67,7 @@ export function Wall({
 
       <Endpoint
         point={geometry.startPoint}
+        unit={unit}
         isFree={isActive && hasStartFree}
         onMouseEnter={hasStartFree ? onMouseEnter : undefined}
         onMouseLeave={hasStartFree ? onMouseLeave : undefined}
@@ -68,6 +75,7 @@ export function Wall({
       />
       <Endpoint
         point={geometry.endPoint}
+        unit={unit}
         isFree={isActive && hasEndFree}
         onMouseEnter={hasEndFree ? onMouseEnter : undefined}
         onMouseLeave={hasEndFree ? onMouseLeave : undefined}
@@ -78,14 +86,14 @@ export function Wall({
         <>
           {[perpendicularAngle1, perpendicularAngle2].map((angle) => {
             const angleRad = (angle * Math.PI) / 180;
-            const centerX = geometry.startPoint.x + (ARROW_BUTTON_DISTANCE / PIXELS_PER_CM) * Math.cos(angleRad);
-            const centerY = geometry.startPoint.y + (ARROW_BUTTON_DISTANCE / PIXELS_PER_CM) * Math.sin(angleRad);
+            const centerX = geometry.startPoint.x + (fromPixels(ARROW_BUTTON_DISTANCE_PX, unit)) * Math.cos(angleRad);
+            const centerY = geometry.startPoint.y + (fromPixels(ARROW_BUTTON_DISTANCE_PX, unit)) * Math.sin(angleRad);
 
             return (
               <NewWallButton
                 key={`start-${angle}`}
-                x={centerX * PIXELS_PER_CM}
-                y={centerY * PIXELS_PER_CM}
+                x={toPixels(centerX, unit)}
+                y={toPixels(centerY, unit)}
                 angle={angle}
                 size={ARROW_BUTTON_SIZE}
                 onClick={() => onNewWallClick('start', angle)}
@@ -99,14 +107,14 @@ export function Wall({
         <>
           {[perpendicularAngle1, perpendicularAngle2].map((angle) => {
             const angleRad = (angle * Math.PI) / 180;
-            const centerX = geometry.endPoint.x + (ARROW_BUTTON_DISTANCE / PIXELS_PER_CM) * Math.cos(angleRad);
-            const centerY = geometry.endPoint.y + (ARROW_BUTTON_DISTANCE / PIXELS_PER_CM) * Math.sin(angleRad);
+            const centerX = geometry.endPoint.x + (fromPixels(ARROW_BUTTON_DISTANCE_PX, unit)) * Math.cos(angleRad);
+            const centerY = geometry.endPoint.y + (fromPixels(ARROW_BUTTON_DISTANCE_PX, unit)) * Math.sin(angleRad);
 
             return (
               <NewWallButton
                 key={`end-${angle}`}
-                x={centerX * PIXELS_PER_CM}
-                y={centerY * PIXELS_PER_CM}
+                x={toPixels(centerX, unit)}
+                y={toPixels(centerY, unit)}
                 angle={angle}
                 size={ARROW_BUTTON_SIZE}
                 onClick={() => onNewWallClick('end', angle)}

@@ -53,6 +53,8 @@ export interface INewFurniture {
 }
 
 export interface IRoom {
+  name: string;
+  unit: Unit;
   originWallId: string | null;
   walls: IWall[];
   doors: IDoor[];

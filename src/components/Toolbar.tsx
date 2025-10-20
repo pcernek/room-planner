@@ -92,14 +92,14 @@ export function Toolbar() {
     const BUFFER = 80;
     const { width, height } = editorState.canvasDimensions;
 
-    if (state.room.walls.length === 0) {
+    if (!state.room || state.room.walls.length === 0) {
       setViewport({ offsetX: width / 2, offsetY: height / 2, scale: 1 });
       return;
     }
 
     const wallGeometries = calculateWallGeometries(state.room.walls, state.room.originWallId);
     const boundingBox = calculateBoundingBox(wallGeometries, state.room);
-    const viewport = calculateCenteredViewport(boundingBox, width, height, BUFFER);
+    const viewport = calculateCenteredViewport(boundingBox, width, height, BUFFER, state.room.unit);
 
     setViewport(viewport);
   }
@@ -183,9 +183,14 @@ export function Toolbar() {
       </div>
 
       <div style={styles.centerSection}>
-        <span style={styles.stats}>
-          Walls: {state.room.walls.length} | Doors: {state.room.doors.length} | Furniture: {state.room.furniture.length}
-        </span>
+        {state.room && (
+          <>
+            <span style={styles.roomName}>{state.room.name}</span>
+            <span style={styles.stats}>
+              Walls: {state.room.walls.length} | Doors: {state.room.doors.length} | Furniture: {state.room.furniture.length}
+            </span>
+          </>
+        )}
       </div>
 
       <div style={styles.rightSection}>
@@ -222,6 +227,12 @@ const styles: Record<string, React.CSSProperties> = {
   centerSection: {
     display: 'flex',
     alignItems: 'center',
+    gap: '20px',
+  },
+  roomName: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#333',
   },
   rightSection: {
     display: 'flex',

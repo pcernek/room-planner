@@ -1,8 +1,7 @@
 import { Line, Arc } from 'react-konva';
-import { IDoor, IWallGeometry } from '../../types';
-import { toCm } from '../../utils/units';
+import { IDoor, IWallGeometry, Unit } from '../../types';
+import { toPixels, pointToPixels } from '../../utils/canvas';
 
-const PIXELS_PER_CM = 2;
 const WALL_THICKNESS = 8;
 const DOOR_COLOR = '#8B4513';
 const SELECTION_COLOR = '#FF6B6B';
@@ -10,13 +9,14 @@ const SELECTION_COLOR = '#FF6B6B';
 interface IProps {
   door: IDoor;
   wallGeometry: IWallGeometry;
+  unit: Unit;
   isSelected: boolean;
   onSelect: () => void;
 }
 
-export function Door({ door, wallGeometry, isSelected, onSelect }: IProps) {
-  const offsetInCm = toCm(door.offsetFromStart, door.unit);
-  const widthInCm = toCm(door.width, door.unit);
+export function Door({ door, wallGeometry, unit, isSelected, onSelect }: IProps) {
+  const offset = door.offsetFromStart;
+  const width = door.width;
 
   const dx = wallGeometry.endPoint.x - wallGeometry.startPoint.x;
   const dy = wallGeometry.endPoint.y - wallGeometry.startPoint.y;
@@ -24,17 +24,20 @@ export function Door({ door, wallGeometry, isSelected, onSelect }: IProps) {
 
   if (wallLength === 0) return null;
 
-  const t = offsetInCm / wallLength;
+  const t = offset / wallLength;
   const doorStart = {
     x: wallGeometry.startPoint.x + t * dx,
     y: wallGeometry.startPoint.y + t * dy,
   };
 
-  const t2 = (offsetInCm + widthInCm) / wallLength;
+  const t2 = (offset + width) / wallLength;
   const doorEnd = {
     x: wallGeometry.startPoint.x + t2 * dx,
     y: wallGeometry.startPoint.y + t2 * dy,
   };
+
+  const doorStartPixels = pointToPixels(doorStart, unit);
+  const doorEndPixels = pointToPixels(doorEnd, unit);
 
   const startAngle = Math.atan2(dy, dx);
   const endAngle = startAngle + Math.PI / 2;
@@ -43,10 +46,10 @@ export function Door({ door, wallGeometry, isSelected, onSelect }: IProps) {
     <>
       <Line
         points={[
-          doorStart.x * PIXELS_PER_CM,
-          doorStart.y * PIXELS_PER_CM,
-          doorEnd.x * PIXELS_PER_CM,
-          doorEnd.y * PIXELS_PER_CM,
+          doorStartPixels.x,
+          doorStartPixels.y,
+          doorEndPixels.x,
+          doorEndPixels.y,
         ]}
         stroke={isSelected ? SELECTION_COLOR : DOOR_COLOR}
         strokeWidth={WALL_THICKNESS}
@@ -55,10 +58,10 @@ export function Door({ door, wallGeometry, isSelected, onSelect }: IProps) {
         onTap={onSelect}
       />
       <Arc
-        x={doorEnd.x * PIXELS_PER_CM}
-        y={doorEnd.y * PIXELS_PER_CM}
+        x={doorEndPixels.x}
+        y={doorEndPixels.y}
         innerRadius={0}
-        outerRadius={widthInCm * PIXELS_PER_CM}
+        outerRadius={toPixels(width, unit)}
         angle={(endAngle - startAngle) * (180 / Math.PI)}
         rotation={startAngle * (180 / Math.PI)}
         stroke={isSelected ? SELECTION_COLOR : '#DDD'}
