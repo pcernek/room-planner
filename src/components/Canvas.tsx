@@ -48,9 +48,9 @@ export function Canvas() {
   }, [state.room.walls.length]);
 
   function getNewWallButtonPositions() {
-    const activeWallId = state.selectedEntityType === 'wall' && state.selectedEntityId
+    const activeWallId = hoveredWallId || (state.selectedEntityType === 'wall' && state.selectedEntityId
       ? state.selectedEntityId
-      : hoveredWallId;
+      : null);
 
     if (!activeWallId) return [];
 
@@ -232,7 +232,7 @@ export function Canvas() {
             <Wall
               key={geometry.id}
               geometry={geometry}
-              isSelected={state.selectedEntityId === geometry.id && state.selectedEntityType === 'wall'}
+              isSelected={!hoveredWallId && state.selectedEntityId === geometry.id && state.selectedEntityType === 'wall'}
               isHovered={hoveredWallId === geometry.id}
               onSelect={(e) => handleWallClick(geometry.id, e)}
               onMouseEnter={() => setHoveredWallId(geometry.id)}
