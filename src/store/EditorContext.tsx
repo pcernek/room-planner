@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { IViewport } from '../types';
 import { STAGE_WIDTH, STAGE_HEIGHT } from '../constants';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 interface IEditorState {
   canvasDimensions: { width: number; height: number };
@@ -15,17 +16,19 @@ interface IEditorContextValue {
 
 const EditorContext = createContext<IEditorContextValue | undefined>(undefined);
 
+const DEFAULT_VIEWPORT: IViewport = {
+  offsetX: 400,
+  offsetY: 400,
+  scale: 1,
+};
+
 export function EditorProvider({ children }: { children: ReactNode }) {
   const [canvasDimensions, setCanvasDimensions] = useState({
     width: STAGE_WIDTH,
     height: STAGE_HEIGHT,
   });
 
-  const [viewport, setViewportState] = useState<IViewport>({
-    offsetX: 400,
-    offsetY: 400,
-    scale: 1,
-  });
+  const [viewport, setViewportState] = useLocalStorage<IViewport>('room-planner-viewport', DEFAULT_VIEWPORT);
 
   const setViewport = (updates: Partial<IViewport>) => {
     setViewportState(prev => ({ ...prev, ...updates }));
