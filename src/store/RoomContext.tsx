@@ -1,7 +1,30 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { IRoom, IWall, IDoor, IFurniture, INewWall, INewDoor, INewFurniture } from '../types';
 import { addAngles } from '../utils/geometry';
 import { newEntityId } from '../utils/id';
+
+const LOCAL_STORAGE_KEY = 'room-planner-state';
+
+function loadRoomFromStorage(): IRoom {
+  try {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed === 'object' && Array.isArray(parsed.walls)) {
+        return parsed;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load room from localStorage:', error);
+  }
+
+  return {
+    originWallId: null,
+    walls: [],
+    doors: [],
+    furniture: [],
+  };
+}
 
 interface IRoomState {
   room: IRoom;
@@ -20,15 +43,11 @@ type RoomAction =
   | { type: 'ADD_FURNITURE'; payload: INewFurniture }
   | { type: 'UPDATE_FURNITURE'; payload: { id: string; updates: Partial<IFurniture> } }
   | { type: 'DELETE_FURNITURE'; payload: string }
-  | { type: 'SET_SELECTED_ENTITY'; payload: { id: string | null; entityType: 'wall' | 'door' | 'furniture' | null } };
+  | { type: 'SET_SELECTED_ENTITY'; payload: { id: string | null; entityType: 'wall' | 'door' | 'furniture' | null } }
+  | { type: 'CLEAR_ROOM' };
 
 const initialState: IRoomState = {
-  room: {
-    originWallId: null,
-    walls: [],
-    doors: [],
-    furniture: [],
-  },
+  room: loadRoomFromStorage(),
   selectedEntityId: null,
   selectedEntityType: null,
 };
@@ -177,6 +196,19 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
         selectedEntityType: action.payload.entityType,
       };
 
+    case 'CLEAR_ROOM':
+      return {
+        ...state,
+        room: {
+          originWallId: null,
+          walls: [],
+          doors: [],
+          furniture: [],
+        },
+        selectedEntityId: null,
+        selectedEntityType: null,
+      };
+
     default:
       return state;
   }
@@ -191,6 +223,14 @@ const RoomContext = createContext<IRoomContextValue | undefined>(undefined);
 
 export function RoomProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(roomReducer, initialState);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state.room));
+    } catch (error) {
+      console.error('Failed to save room to localStorage:', error);
+    }
+  }, [state.room]);
 
   return (
     <RoomContext.Provider value={{ state, dispatch }}>

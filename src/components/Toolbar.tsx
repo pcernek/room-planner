@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useRoom } from '../store/RoomContext';
 import { useEditor } from '../store/EditorContext';
 import { IRoom } from '../types';
@@ -9,6 +9,24 @@ export function Toolbar() {
   const { state, dispatch } = useRoom();
   const { state: editorState, setViewport } = useEditor();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [isFileMenuOpen, setIsFileMenuOpen] = useState(false);
+  const [hoveredMenuItem, setHoveredMenuItem] = useState<string | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsFileMenuOpen(false);
+      }
+    }
+
+    if (isFileMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [isFileMenuOpen]);
 
   function handleExport() {
     const dataStr = JSON.stringify(state.room, null, 2);
@@ -86,15 +104,75 @@ export function Toolbar() {
     setViewport(viewport);
   }
 
+  function handleStartFromScratch() {
+    const confirmed = window.confirm(
+      'Are you sure you want to delete the current project? This action cannot be undone.'
+    );
+    if (confirmed) {
+      dispatch({ type: 'CLEAR_ROOM' });
+      setIsFileMenuOpen(false);
+    }
+  }
+
+  function handleImportClick() {
+    handleImport();
+    setIsFileMenuOpen(false);
+  }
+
+  function handleExportClick() {
+    handleExport();
+    setIsFileMenuOpen(false);
+  }
+
   return (
     <div style={styles.toolbar}>
       <div style={styles.leftSection}>
-        <button onClick={handleImport} style={styles.button}>
-          Import JSON
-        </button>
-        <button onClick={handleExport} style={styles.button}>
-          Export JSON
-        </button>
+        <div style={styles.menuContainer} ref={menuRef}>
+          <button
+            onClick={() => setIsFileMenuOpen(!isFileMenuOpen)}
+            style={styles.button}
+          >
+            File ▾
+          </button>
+          {isFileMenuOpen && (
+            <div style={styles.dropdown}>
+              <button
+                onClick={handleImportClick}
+                style={{
+                  ...styles.menuItem,
+                  backgroundColor: hoveredMenuItem === 'import' ? '#f5f5f5' : 'transparent',
+                }}
+                onMouseEnter={() => setHoveredMenuItem('import')}
+                onMouseLeave={() => setHoveredMenuItem(null)}
+              >
+                Import JSON
+              </button>
+              <button
+                onClick={handleExportClick}
+                style={{
+                  ...styles.menuItem,
+                  backgroundColor: hoveredMenuItem === 'export' ? '#f5f5f5' : 'transparent',
+                }}
+                onMouseEnter={() => setHoveredMenuItem('export')}
+                onMouseLeave={() => setHoveredMenuItem(null)}
+              >
+                Export JSON
+              </button>
+              <div style={styles.menuDivider} />
+              <button
+                onClick={handleStartFromScratch}
+                style={{
+                  ...styles.menuItemDanger,
+                  backgroundColor: hoveredMenuItem === 'clear' ? '#ffebee' : 'transparent',
+                }}
+                onMouseEnter={() => setHoveredMenuItem('clear')}
+                onMouseLeave={() => setHoveredMenuItem(null)}
+              >
+                Start from Scratch
+              </button>
+            </div>
+          )}
+        </div>
         <input
           ref={fileInputRef}
           type="file"
@@ -168,6 +246,47 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#333',
     minWidth: '50px',
     textAlign: 'center',
+  },
+  menuContainer: {
+    position: 'relative',
+  },
+  dropdown: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    marginTop: '4px',
+    backgroundColor: '#fff',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+    minWidth: '180px',
+    zIndex: 1000,
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  menuItem: {
+    padding: '10px 16px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    fontSize: '14px',
+    cursor: 'pointer',
+    textAlign: 'left',
+    transition: 'background-color 0.2s',
+  },
+  menuItemDanger: {
+    padding: '10px 16px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    fontSize: '14px',
+    cursor: 'pointer',
+    textAlign: 'left',
+    color: '#E24A4A',
+    transition: 'background-color 0.2s',
+  },
+  menuDivider: {
+    height: '1px',
+    backgroundColor: '#ddd',
+    margin: '4px 0',
   },
 };
 
