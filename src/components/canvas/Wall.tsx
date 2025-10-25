@@ -4,6 +4,7 @@ import { IWallGeometry, Unit } from '../../types';
 import { Endpoint } from './Endpoint';
 import { NewWallButton } from './NewWallButton';
 import { toPixels, pointToPixels, fromPixels } from '../../utils/canvas';
+import { useHover } from '../../store/HoverContext';
 
 const WALL_THICKNESS_CM = 8;
 const WALL_COLOR = '#333';
@@ -37,14 +38,25 @@ export function Wall({
   onMouseLeave,
   onNewWallClick
 }: IProps) {
+  const { setHover, clearHover } = useHover();
   const isActive = isSelected || isHovered;
   const wallAngle = geometry.angle;
   const perpendicularAngle1 = wallAngle + 90;
   const perpendicularAngle2 = wallAngle - 90;
 
-  const wallThickness = WALL_THICKNESS_CM / 2; // constant wall thickness
+  const wallThickness = WALL_THICKNESS_CM / 2;
   const startPixels = pointToPixels(geometry.startPoint, unit);
   const endPixels = pointToPixels(geometry.endPoint, unit);
+
+  const handleMouseEnter = () => {
+    setHover('wall', geometry.id);
+    onMouseEnter();
+  };
+
+  const handleMouseLeave = () => {
+    clearHover();
+    onMouseLeave();
+  };
 
   return (
     <Group>
@@ -61,16 +73,8 @@ export function Wall({
         lineJoin="round"
         onClick={onSelect}
         onTap={onSelect}
-        onMouseEnter={(e) => {
-          const container = e.target.getStage()?.container();
-          if (container) container.style.cursor = 'pointer';
-          onMouseEnter();
-        }}
-        onMouseLeave={(e) => {
-          const container = e.target.getStage()?.container();
-          if (container) container.style.cursor = 'move';
-          onMouseLeave();
-        }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       />
 
       <Endpoint

@@ -1,7 +1,7 @@
 import { Line, Arc } from 'react-konva';
-import Konva from 'konva';
 import { IDoor, IWallGeometry, Unit } from '../../types';
 import { toPixels, pointToPixels } from '../../utils/canvas';
+import { useHover } from '../../store/HoverContext';
 
 const WALL_THICKNESS = 8;
 const DOOR_COLOR = '#8B4513';
@@ -16,6 +16,7 @@ interface IProps {
 }
 
 export function Door({ door, wallGeometry, unit, isSelected, onSelect }: IProps) {
+  const { setHover, clearHover } = useHover();
   const offset = door.offsetFromStart;
   const width = door.width;
 
@@ -43,14 +44,12 @@ export function Door({ door, wallGeometry, unit, isSelected, onSelect }: IProps)
   const startAngle = Math.atan2(dy, dx);
   const endAngle = startAngle + Math.PI / 2;
 
-  const handleMouseEnter = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    const container = e.target.getStage()?.container();
-    if (container) container.style.cursor = 'pointer';
+  const handleMouseEnter = () => {
+    setHover('door', door.id);
   };
 
-  const handleMouseLeave = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    const container = e.target.getStage()?.container();
-    if (container) container.style.cursor = 'move';
+  const handleMouseLeave = () => {
+    clearHover();
   };
 
   return (

@@ -1,5 +1,6 @@
 import { Circle, Text, Group } from 'react-konva';
 import Konva from 'konva';
+import { useHover } from '../../store/HoverContext';
 
 const BUTTON_COLOR = '#4A90E2';
 const BUTTON_HOVER_COLOR = '#357ABD';
@@ -13,6 +14,20 @@ interface IProps {
 }
 
 export function NewWallButton({ x, y, angle, size, onClick }: IProps) {
+  const { setHover, clearHover } = useHover();
+
+  const handleMouseEnter = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    setHover('newWallButton', `${x},${y},${angle}`);
+    const circle = e.target as Konva.Circle;
+    circle.fill(BUTTON_HOVER_COLOR);
+  };
+
+  const handleMouseLeave = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    clearHover();
+    const circle = e.target as Konva.Circle;
+    circle.fill(BUTTON_COLOR);
+  };
+
   return (
     <Group x={x} y={y} rotation={angle}>
       <Circle
@@ -26,22 +41,8 @@ export function NewWallButton({ x, y, angle, size, onClick }: IProps) {
         shadowOffsetY={2}
         onClick={onClick}
         onTap={onClick}
-        onMouseEnter={(e) => {
-          const container = e.target.getStage()?.container();
-          if (container) {
-            container.style.cursor = 'pointer';
-          }
-          const circle = e.target as Konva.Circle;
-          circle.fill(BUTTON_HOVER_COLOR);
-        }}
-        onMouseLeave={(e) => {
-          const container = e.target.getStage()?.container();
-          if (container) {
-            container.style.cursor = 'move';
-          }
-          const circle = e.target as Konva.Circle;
-          circle.fill(BUTTON_COLOR);
-        }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       />
       <Text
         text="→"

@@ -1,6 +1,7 @@
 import React from 'react';
 import { RoomProvider } from './store/RoomContext';
 import { EditorProvider } from './store/EditorContext';
+import { HoverProvider } from './store/HoverContext';
 import { Toolbar } from './components/Toolbar';
 import { Sidebar } from './components/Sidebar';
 import { Canvas } from './components/Canvas';
@@ -8,17 +9,19 @@ import { Canvas } from './components/Canvas';
 function App() {
   return (
     <EditorProvider>
-      <RoomProvider>
-        <div style={styles.container}>
-          <Toolbar />
-          <div style={styles.mainContent}>
-            <Sidebar />
-            <div style={styles.canvasContainer}>
-              <Canvas />
+      <HoverProvider>
+        <RoomProvider>
+          <div style={styles.container}>
+            <Toolbar />
+            <div style={styles.mainContent}>
+              <Sidebar />
+              <div style={styles.canvasContainer}>
+                <Canvas />
+              </div>
             </div>
           </div>
-        </div>
-      </RoomProvider>
+        </RoomProvider>
+      </HoverProvider>
     </EditorProvider>
   );
 }

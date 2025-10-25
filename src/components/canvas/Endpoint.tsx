@@ -2,6 +2,7 @@ import { Circle } from 'react-konva';
 import Konva from 'konva';
 import { IPoint, Unit } from '../../types';
 import { pointToPixels } from '../../utils/canvas';
+import { useHover } from '../../store/HoverContext';
 
 const ENDPOINT_RADIUS = 8;
 const FREE_ENDPOINT_RADIUS = 12;
@@ -16,17 +17,16 @@ interface IProps {
 }
 
 export function Endpoint({ point, unit, isFree = false, onMouseEnter, onMouseLeave, onSelect }: IProps) {
+  const { setHover, clearHover } = useHover();
   const pixelPoint = pointToPixels(point, unit);
 
-  const handleMouseEnter = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    const container = e.target.getStage()?.container();
-    if (container) container.style.cursor = 'pointer';
+  const handleMouseEnter = () => {
+    setHover('endpoint', `${point.x},${point.y}`);
     onMouseEnter?.();
   };
 
-  const handleMouseLeave = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    const container = e.target.getStage()?.container();
-    if (container) container.style.cursor = 'move';
+  const handleMouseLeave = () => {
+    clearHover();
     onMouseLeave?.();
   };
 

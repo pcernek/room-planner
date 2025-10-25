@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { Rect, Text, Group } from 'react-konva';
 import Konva from 'konva';
 import { IFurniture, Unit } from '../../types';
 import { toPixels, pointToPixels, fromPixels } from '../../utils/canvas';
+import { useHover } from '../../store/HoverContext';
 
 const FURNITURE_COLOR = '#4A90E2';
 const SELECTION_COLOR = '#FF6B6B';
@@ -21,21 +23,25 @@ export function Furniture({ furniture, unit, isSelected, onSelect, onDragStart, 
   const width = furniture.width;
   const height = furniture.height;
   const positionPixels = pointToPixels(furniture.position, unit);
+  const { setHover, clearHover, hoverState } = useHover();
 
-  // Calculate bounding box for rotated rectangle
   const rotationRad = (furniture.rotation * Math.PI) / 180;
   const widthPixels = toPixels(width, unit);
   const heightPixels = toPixels(height, unit);
   const boundingWidth = Math.abs(widthPixels * Math.cos(rotationRad)) + Math.abs(heightPixels * Math.sin(rotationRad));
 
-  const handleMouseEnter = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    const container = e.target.getStage()?.container();
-    if (container) container.style.cursor = isSelected ? 'grab' : 'pointer';
+  useEffect(() => {
+    if (hoverState.entityType === 'furniture' && hoverState.entityId === furniture.id) {
+      setHover('furniture', furniture.id, isSelected);
+    }
+  }, [isSelected, hoverState.entityType, hoverState.entityId, furniture.id, setHover]);
+
+  const handleMouseEnter = () => {
+    setHover('furniture', furniture.id, isSelected);
   };
 
-  const handleMouseLeave = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    const container = e.target.getStage()?.container();
-    if (container) container.style.cursor = 'move';
+  const handleMouseLeave = () => {
+    clearHover();
   };
 
   const handleDragStart = (e: Konva.KonvaEventObject<DragEvent>) => {

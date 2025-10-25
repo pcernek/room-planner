@@ -12,12 +12,14 @@ import { NewWallModal } from './NewWallModal';
 import { RoomSetupModal } from './RoomSetupModal';
 import { toPixels } from '../utils/canvas';
 import { useFurniturePlacement } from '../hooks/useFurniturePlacement';
+import { useCursorEffect } from '../hooks/useCursorEffect';
 
 export function Canvas() {
   const { state, dispatch } = useRoom();
   const { state: editorState, setCanvasDimensions, setViewport, setActiveTool } = useEditor();
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [stageContainer, setStageContainer] = useState<HTMLDivElement | null>(null);
   const [hoveredWallId, setHoveredWallId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingWallAngle, setPendingWallAngle] = useState<number>(0);
@@ -26,6 +28,14 @@ export function Canvas() {
   const [isFurnitureDragging, setIsFurnitureDragging] = useState(false);
 
   const furniturePlacement = useFurniturePlacement();
+
+  useEffect(() => {
+    if (stageRef.current) {
+      setStageContainer(stageRef.current.container());
+    }
+  }, []);
+
+  useCursorEffect(stageContainer);
 
   useEffect(() => {
     if (state.room && state.room.walls.length === 0 && !isModalOpen) {
@@ -216,7 +226,7 @@ export function Canvas() {
         y={editorState.viewport.offsetY}
         scaleX={editorState.viewport.scale}
         scaleY={editorState.viewport.scale}
-        style={{ border: '1px solid #ddd', backgroundColor: '#fff', cursor: editorState.activeTool === 'placeFurniture' ? 'crosshair' : 'move' }}
+        style={{ border: '1px solid #ddd', backgroundColor: '#fff' }}
       >
         <Layer>
           {Array.from(wallGeometries.values()).map((geometry) => (
