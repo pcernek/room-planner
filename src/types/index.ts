@@ -24,6 +24,8 @@ export interface IDoor {
   offsetFromStart: number;
   width: number;
   unit: Unit;
+  swapHinge: boolean;
+  reverseSwing: boolean;
 }
 
 export interface INewDoor {

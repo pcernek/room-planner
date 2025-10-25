@@ -42,8 +42,13 @@ export function Door({ door, wallGeometry, unit, isSelected, onSelect }: IProps)
   const doorEndPixels = pointToPixels(doorEnd, unit);
 
   const wallAngle = Math.atan2(dy, dx);
-  const arcStartAngle = wallAngle;
+  const arcRotation = wallAngle * (180 / Math.PI);
   const arcAngle = 90;
+
+  const scaleX = door.swapHinge ? -1 : 1;
+  const scaleY = door.reverseSwing ? -1 : 1;
+
+  const arcPosition = door.swapHinge ? doorEndPixels : doorStartPixels;
 
   const handleMouseEnter = () => {
     setHover('door', door.id);
@@ -71,12 +76,14 @@ export function Door({ door, wallGeometry, unit, isSelected, onSelect }: IProps)
         onMouseLeave={handleMouseLeave}
       />
       <Arc
-        x={doorStartPixels.x}
-        y={doorStartPixels.y}
+        x={arcPosition.x}
+        y={arcPosition.y}
         innerRadius={0}
         outerRadius={toPixels(width, unit)}
         angle={arcAngle}
-        rotation={arcStartAngle * (180 / Math.PI)}
+        rotation={arcRotation}
+        scaleX={scaleX}
+        scaleY={scaleY}
         stroke={isSelected ? SELECTION_COLOR : '#DDD'}
         strokeWidth={1}
         onMouseEnter={handleMouseEnter}

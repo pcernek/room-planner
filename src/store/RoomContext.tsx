@@ -11,6 +11,13 @@ function loadRoomFromStorage(): IRoom | null {
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed && typeof parsed === 'object' && Array.isArray(parsed.walls) && parsed.name && parsed.unit) {
+        if (Array.isArray(parsed.doors)) {
+          parsed.doors = parsed.doors.map((door: IDoor) => ({
+            ...door,
+            swapHinge: door.swapHinge ?? false,
+            reverseSwing: door.reverseSwing ?? false,
+          }));
+        }
         return parsed;
       }
     }
@@ -155,6 +162,8 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
       const newDoor: IDoor = {
         id: newEntityId(),
         ...action.payload,
+        swapHinge: action.payload.swapHinge ?? false,
+        reverseSwing: action.payload.reverseSwing ?? false,
       };
       const newDoors = [...state.room.doors, newDoor];
       return {

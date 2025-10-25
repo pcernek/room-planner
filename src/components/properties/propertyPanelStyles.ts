@@ -45,5 +45,20 @@ export const propertyPanelStyles: Record<string, React.CSSProperties> = {
     fontSize: '14px',
     cursor: 'pointer',
   },
+  flipButtonsContainer: {
+    display: 'flex',
+    gap: '10px',
+    marginBottom: '10px',
+  },
+  flipButton: {
+    flex: 1,
+    padding: '10px',
+    backgroundColor: '#4A90E2',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '4px',
+    fontSize: '14px',
+    cursor: 'pointer',
+  },
 };
 
