@@ -30,12 +30,31 @@ export function Furniture({ furniture, unit, isSelected, onSelect, onDragStart, 
 
   const handleMouseEnter = (e: Konva.KonvaEventObject<MouseEvent>) => {
     const container = e.target.getStage()?.container();
-    if (container) container.style.cursor = 'move';
+    if (container) container.style.cursor = isSelected ? 'grab' : 'pointer';
   };
 
   const handleMouseLeave = (e: Konva.KonvaEventObject<MouseEvent>) => {
     const container = e.target.getStage()?.container();
-    if (container) container.style.cursor = 'default';
+    if (container) container.style.cursor = 'move';
+  };
+
+  const handleDragStart = (e: Konva.KonvaEventObject<DragEvent>) => {
+    e.cancelBubble = true;
+    const container = e.target.getStage()?.container();
+    if (container) container.style.cursor = 'grabbing';
+    onDragStart();
+  };
+
+  const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
+    e.cancelBubble = true;
+  };
+
+  const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
+    e.cancelBubble = true;
+    const node = e.target;
+    const container = e.target.getStage()?.container();
+    if (container) container.style.cursor = 'grab';
+    onDragEnd(fromPixels(node.x(), unit), fromPixels(node.y(), unit));
   };
 
   return (
@@ -47,18 +66,9 @@ export function Furniture({ furniture, unit, isSelected, onSelect, onDragStart, 
       onTap={onSelect}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      onDragStart={(e) => {
-        e.cancelBubble = true;
-        onDragStart();
-      }}
-      onDragMove={(e) => {
-        e.cancelBubble = true;
-      }}
-      onDragEnd={(e) => {
-        e.cancelBubble = true;
-        const node = e.target;
-        onDragEnd(fromPixels(node.x(), unit), fromPixels(node.y(), unit));
-      }}
+      onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
+      onDragEnd={handleDragEnd}
     >
       <Group
         rotation={furniture.rotation}

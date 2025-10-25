@@ -216,7 +216,7 @@ export function Canvas() {
         y={editorState.viewport.offsetY}
         scaleX={editorState.viewport.scale}
         scaleY={editorState.viewport.scale}
-        style={{ border: '1px solid #ddd', backgroundColor: '#fff', cursor: editorState.activeTool === 'placeFurniture' ? 'crosshair' : 'default' }}
+        style={{ border: '1px solid #ddd', backgroundColor: '#fff', cursor: editorState.activeTool === 'placeFurniture' ? 'crosshair' : 'move' }}
       >
         <Layer>
           {Array.from(wallGeometries.values()).map((geometry) => (

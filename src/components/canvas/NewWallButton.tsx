@@ -37,7 +37,7 @@ export function NewWallButton({ x, y, angle, size, onClick }: IProps) {
         onMouseLeave={(e) => {
           const container = e.target.getStage()?.container();
           if (container) {
-            container.style.cursor = 'default';
+            container.style.cursor = 'move';
           }
           const circle = e.target as Konva.Circle;
           circle.fill(BUTTON_COLOR);

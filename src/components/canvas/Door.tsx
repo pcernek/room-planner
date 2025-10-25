@@ -50,7 +50,7 @@ export function Door({ door, wallGeometry, unit, isSelected, onSelect }: IProps)
 
   const handleMouseLeave = (e: Konva.KonvaEventObject<MouseEvent>) => {
     const container = e.target.getStage()?.container();
-    if (container) container.style.cursor = 'default';
+    if (container) container.style.cursor = 'move';
   };
 
   return (
