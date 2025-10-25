@@ -6,7 +6,7 @@ import { NewWallButton } from './NewWallButton';
 import { toPixels, pointToPixels, fromPixels } from '../../utils/canvas';
 import { useHover } from '../../store/HoverContext';
 
-const WALL_THICKNESS_CM = 8;
+const WALL_THICKNESS_CM = 16;
 const WALL_COLOR = '#333';
 const HOVER_COLOR = '#FF6B6B';
 const SELECTION_COLOR = '#FF6B6B';
