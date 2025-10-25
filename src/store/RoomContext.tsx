@@ -162,8 +162,8 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
       const newDoor: IDoor = {
         id: newEntityId(),
         ...action.payload,
-        swapHinge: action.payload.swapHinge ?? false,
-        reverseSwing: action.payload.reverseSwing ?? false,
+        swapHinge: false,
+        reverseSwing: false,
       };
       const newDoors = [...state.room.doors, newDoor];
       return {
