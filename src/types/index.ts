@@ -73,7 +73,7 @@ export interface IWallGeometry {
   startPoint: IPoint;
   endPoint: IPoint;
   angle: number;
-  lengthInCm: number;
+  length: number;
 }
 
 export interface IViewport {

@@ -1,5 +1,4 @@
 import { IWall, IWallGeometry, IPoint } from '../types';
-import { toCm } from './units';
 
 export function degreesToRadians(degrees: number): number {
   return (degrees * Math.PI) / 180;
@@ -31,11 +30,11 @@ export function calculateWallGeometries(orderedWalls: IWall[], originWallId: str
   let currentPoint: IPoint = { x: 0, y: 0 };
 
   for (const wall of orderedWalls) {
-    const lengthInCm = toCm(wall.length, wall.unit);
+    const length = wall.length;
     const angleRad = degreesToRadians(wall.angle);
     const endPoint: IPoint = {
-      x: currentPoint.x + lengthInCm * Math.cos(angleRad),
-      y: currentPoint.y + lengthInCm * Math.sin(angleRad),
+      x: currentPoint.x + length * Math.cos(angleRad),
+      y: currentPoint.y + length * Math.sin(angleRad),
     };
 
     geometries.set(wall.id, {
@@ -43,7 +42,7 @@ export function calculateWallGeometries(orderedWalls: IWall[], originWallId: str
       startPoint: currentPoint,
       endPoint,
       angle: wall.angle,
-      lengthInCm,
+      length,
     });
 
     currentPoint = endPoint;

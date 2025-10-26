@@ -1,13 +1,12 @@
 import { Line, Group } from 'react-konva';
 import Konva from 'konva';
 import { IWallGeometry, Unit } from '../../types';
-import { Endpoint } from './Endpoint';
 import { NewWallButton } from './NewWallButton';
 import { toPixels, pointToPixels, fromPixels } from '../../utils/canvas';
 import { useHover } from '../../store/HoverContext';
 
-const WALL_THICKNESS_CM = 16;
-const WALL_COLOR = '#333';
+const WALL_THICKNESS_CM = 12;
+const WALL_COLOR = '#5c5c5c';
 const HOVER_COLOR = '#FF6B6B';
 const SELECTION_COLOR = '#FF6B6B';
 const ARROW_BUTTON_SIZE = 40;
@@ -44,7 +43,7 @@ export function Wall({
   const perpendicularAngle1 = wallAngle + 90;
   const perpendicularAngle2 = wallAngle - 90;
 
-  const wallThickness = WALL_THICKNESS_CM / 2;
+  const wallThickness = toPixels(WALL_THICKNESS_CM / 2, 'cm');
   const startPixels = pointToPixels(geometry.startPoint, unit);
   const endPixels = pointToPixels(geometry.endPoint, unit);
 
@@ -75,23 +74,6 @@ export function Wall({
         onTap={onSelect}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-      />
-
-      <Endpoint
-        point={geometry.startPoint}
-        unit={unit}
-        isFree={isActive && hasStartFree}
-        onMouseEnter={hasStartFree ? onMouseEnter : undefined}
-        onMouseLeave={hasStartFree ? onMouseLeave : undefined}
-        onSelect={hasStartFree ? onSelect : undefined}
-      />
-      <Endpoint
-        point={geometry.endPoint}
-        unit={unit}
-        isFree={isActive && hasEndFree}
-        onMouseEnter={hasEndFree ? onMouseEnter : undefined}
-        onMouseLeave={hasEndFree ? onMouseLeave : undefined}
-        onSelect={hasEndFree ? onSelect : undefined}
       />
 
       {isActive && hasStartFree && (
