@@ -1,18 +1,21 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Stage, Layer, Rect, Circle } from 'react-konva';
+import { Stage, Layer } from 'react-konva';
 import Konva from 'konva';
 import { useRoom } from '../store/RoomContext';
 import { useEditor } from '../store/EditorContext';
 import { calculateWallGeometries } from '../utils/geometry';
-import { INewWall, Unit } from '../types';
+import { Unit } from '../types';
 import { Wall } from './canvas/Wall';
 import { Door } from './canvas/Door';
 import { Furniture } from './canvas/Furniture';
 import { NewWallModal } from './NewWallModal';
 import { RoomSetupModal } from './RoomSetupModal';
-import { toPixels } from '../utils/canvas';
+import { PreviewLayer } from './canvas/PreviewLayer';
 import { useFurniturePlacement } from '../hooks/useFurniturePlacement';
 import { useCursorEffect } from '../hooks/useCursorEffect';
+import { useWallCreationModal } from '../hooks/useWallCreationModal';
+import { useCanvasInteraction } from '../hooks/useCanvasInteraction';
+import { useEntitySelection } from '../hooks/useEntitySelection';
 
 export function Canvas() {
   const { state, dispatch } = useRoom();
@@ -21,13 +24,14 @@ export function Canvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [stageContainer, setStageContainer] = useState<HTMLDivElement | null>(null);
   const [hoveredWallId, setHoveredWallId] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [pendingWallAngle, setPendingWallAngle] = useState<number>(0);
-  const [pendingFromNode, setPendingFromNode] = useState<{ wallId: string; endpoint: 'start' | 'end' } | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isFurnitureDragging, setIsFurnitureDragging] = useState(false);
 
   const furniturePlacement = useFurniturePlacement();
+  const wallCreationModal = useWallCreationModal();
+  const entitySelection = useEntitySelection();
+  const canvasInteraction = useCanvasInteraction({
+    viewport: editorState.viewport,
+    setViewport,
+  });
 
   useEffect(() => {
     if (stageRef.current) {
@@ -36,14 +40,6 @@ export function Canvas() {
   }, []);
 
   useCursorEffect(stageContainer);
-
-  useEffect(() => {
-    if (state.room && state.room.walls.length === 0 && !isModalOpen) {
-      setIsModalOpen(true);
-      setPendingWallAngle(0);
-      setPendingFromNode(null);
-    }
-  }, [state.room?.walls.length, isModalOpen]);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -82,33 +78,8 @@ export function Canvas() {
     return [firstWall?.id, lastWall?.id];
   }, [state.room?.walls.length]);
 
-  function handleWallSelect(wallId: string) {
-    dispatch({
-      type: 'SET_SELECTED_ENTITY',
-      payload: { id: wallId, entityType: 'wall' },
-    });
-  }
-
-  function handleDoorSelect(doorId: string) {
-    dispatch({
-      type: 'SET_SELECTED_ENTITY',
-      payload: { id: doorId, entityType: 'door' },
-    });
-  }
-
-  function handleFurnitureSelect(furnitureId: string) {
-    dispatch({
-      type: 'SET_SELECTED_ENTITY',
-      payload: { id: furnitureId, entityType: 'furniture' },
-    });
-  }
-
-  function handleFurnitureDragStart() {
-    setIsFurnitureDragging(true);
-  }
-
   function handleFurnitureDragEnd(furnitureId: string, x: number, y: number) {
-    setIsFurnitureDragging(false);
+    furniturePlacement.handleFurnitureDragEnd();
     dispatch({
       type: 'UPDATE_FURNITURE',
       payload: {
@@ -120,35 +91,6 @@ export function Canvas() {
 
   function handleRoomSetup(name: string, unit: Unit) {
     dispatch({ type: 'INITIALIZE_ROOM', payload: { name, unit } });
-  }
-
-  function handleModalConfirm(length: number, unit: Unit) {
-    const newWall: INewWall = {
-      length,
-      unit,
-      angle: pendingWallAngle,
-      fromNode: pendingFromNode,
-    };
-
-    dispatch({ type: 'ADD_WALL', payload: newWall });
-
-    setIsModalOpen(false);
-    setPendingWallAngle(0);
-    setPendingFromNode(null);
-  }
-
-  function handleModalCancel() {
-    if (state.room && state.room.walls.length > 0) {
-      setIsModalOpen(false);
-      setPendingWallAngle(0);
-      setPendingFromNode(null);
-    }
-  }
-
-  function handleNewWallClick(wallId: string, endpoint: 'start' | 'end', angle: number) {
-    setPendingWallAngle(angle);
-    setPendingFromNode({ wallId, endpoint });
-    setIsModalOpen(true);
   }
 
   function handleStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
@@ -166,10 +108,7 @@ export function Canvas() {
     }
 
     if (e.target === e.target.getStage()) {
-      dispatch({
-        type: 'SET_SELECTED_ENTITY',
-        payload: { id: null, entityType: null },
-      });
+      entitySelection.clearSelection();
     }
   }
 
@@ -182,43 +121,16 @@ export function Canvas() {
     }
   }
 
-  function handleStageDragStart() {
-    setIsDragging(true);
-  }
-
-  function handleStageDragEnd(e: Konva.KonvaEventObject<DragEvent>) {
-    setIsDragging(false);
-    const stage = e.target as Konva.Stage;
-    setViewport({
-      offsetX: stage.x(),
-      offsetY: stage.y(),
-    });
-  }
-
-  function handleWheel(e: Konva.KonvaEventObject<WheelEvent>) {
-    e.evt.preventDefault();
-    const delta = e.evt.deltaY > 0 ? 0.95 : 1.05;
-    const newScale = Math.max(0.1, Math.min(5, editorState.viewport.scale * delta));
-    setViewport({ scale: newScale });
-  }
-
-  function handleWallClick(wallId: string, e: Konva.KonvaEventObject<MouseEvent>) {
-    e.cancelBubble = true;
-    if (!isDragging) {
-      handleWallSelect(wallId);
-    }
-  }
-
   return (
     <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
       <Stage
         ref={stageRef}
         width={editorState.canvasDimensions.width}
         height={editorState.canvasDimensions.height}
-        draggable={!isFurnitureDragging && editorState.activeTool !== 'placeFurniture'}
-        onDragStart={handleStageDragStart}
-        onDragEnd={handleStageDragEnd}
-        onWheel={handleWheel}
+        draggable={!furniturePlacement.isFurnitureDragging && editorState.activeTool !== 'placeFurniture'}
+        onDragStart={canvasInteraction.handleStageDragStart}
+        onDragEnd={canvasInteraction.handleStageDragEnd}
+        onWheel={canvasInteraction.handleWheel}
         onClick={handleStageClick}
         onTap={handleStageClick}
         onMouseMove={handleStageMouseMove}
@@ -238,10 +150,10 @@ export function Canvas() {
               isHovered={hoveredWallId === geometry.id}
               hasStartFree={geometry.id === firstWallId}
               hasEndFree={geometry.id === lastWallId}
-              onSelect={(e) => handleWallClick(geometry.id, e)}
+              onSelect={(e) => entitySelection.handleWallClick(geometry.id, e, canvasInteraction.isDragging)}
               onMouseEnter={() => setHoveredWallId(geometry.id)}
               onMouseLeave={() => setHoveredWallId(null)}
-              onNewWallClick={(endpoint, angle) => handleNewWallClick(geometry.id, endpoint, angle)}
+              onNewWallClick={(endpoint, angle) => wallCreationModal.handleNewWallClick(geometry.id, endpoint, angle)}
             />
           ))}
 
@@ -255,7 +167,7 @@ export function Canvas() {
                 wallGeometry={wallGeometry}
                 unit={state.room?.unit || 'cm'}
                 isSelected={state.selectedEntityId === door.id && state.selectedEntityType === 'door'}
-                onSelect={() => handleDoorSelect(door.id)}
+                onSelect={() => entitySelection.selectDoor(door.id)}
               />
             );
           })}
@@ -266,34 +178,17 @@ export function Canvas() {
               furniture={furniture}
               unit={state.room?.unit || 'cm'}
               isSelected={state.selectedEntityId === furniture.id && state.selectedEntityType === 'furniture'}
-              onSelect={() => handleFurnitureSelect(furniture.id)}
-              onDragStart={handleFurnitureDragStart}
+              onSelect={() => entitySelection.selectFurniture(furniture.id)}
+              onDragStart={furniturePlacement.handleFurnitureDragStart}
               onDragEnd={(x, y) => handleFurnitureDragEnd(furniture.id, x, y)}
             />
           ))}
 
-          {furniturePlacement.furnitureStart && state.room && (
-            <Circle
-              x={toPixels(furniturePlacement.furnitureStart.x, state.room.unit)}
-              y={toPixels(furniturePlacement.furnitureStart.y, state.room.unit)}
-              radius={8}
-              stroke="#4A90E2"
-              strokeWidth={2}
-              listening={false}
-            />
-          )}
-
-          {furniturePlacement.previewRect && state.room && (
-            <Rect
-              x={toPixels(furniturePlacement.previewRect.x, state.room.unit)}
-              y={toPixels(furniturePlacement.previewRect.y, state.room.unit)}
-              width={toPixels(furniturePlacement.previewRect.width, state.room.unit)}
-              height={toPixels(furniturePlacement.previewRect.height, state.room.unit)}
-              stroke="#4A90E2"
-              strokeWidth={2}
-              dash={[5, 5]}
-              fill="rgba(74, 144, 226, 0.1)"
-              listening={false}
+          {state.room && (
+            <PreviewLayer
+              furnitureStart={furniturePlacement.furnitureStart}
+              previewRect={furniturePlacement.previewRect}
+              unit={state.room.unit}
             />
           )}
         </Layer>
@@ -305,10 +200,10 @@ export function Canvas() {
       />
 
       <NewWallModal
-        isOpen={isModalOpen && state.room !== null}
+        isOpen={wallCreationModal.isModalOpen && state.room !== null}
         unit={state.room?.unit || 'cm'}
-        onConfirm={handleModalConfirm}
-        onCancel={handleModalCancel}
+        onConfirm={wallCreationModal.handleModalConfirm}
+        onCancel={wallCreationModal.handleModalCancel}
       />
     </div>
   );

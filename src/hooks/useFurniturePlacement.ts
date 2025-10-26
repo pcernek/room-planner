@@ -13,19 +13,31 @@ interface IFurniturePlacementResult {
   furnitureStart: IPoint | null;
   furniturePreview: IPoint | null;
   previewRect: { x: number; y: number; width: number; height: number } | null;
+  isFurnitureDragging: boolean;
   handleStageClick: (stage: Konva.Stage, viewport: IViewport, unit: Unit) => INewFurniture | null;
   handleStageMouseMove: (stage: Konva.Stage, viewport: IViewport, unit: Unit) => void;
+  handleFurnitureDragStart: () => void;
+  handleFurnitureDragEnd: () => void;
   reset: () => void;
 }
 
 export function useFurniturePlacement(): IFurniturePlacementResult {
   const [furnitureStart, setFurnitureStart] = useState<IPoint | null>(null);
   const [furniturePreview, setFurniturePreview] = useState<IPoint | null>(null);
+  const [isFurnitureDragging, setIsFurnitureDragging] = useState(false);
 
   const reset = useCallback(() => {
     setFurnitureStart(null);
     setFurniturePreview(null);
   }, []);
+
+  function handleFurnitureDragStart() {
+    setIsFurnitureDragging(true);
+  }
+
+  function handleFurnitureDragEnd() {
+    setIsFurnitureDragging(false);
+  }
 
   const handleStageClick = useCallback((stage: Konva.Stage, viewport: IViewport, unit: Unit): INewFurniture | null => {
     const pointerPos = stage.getPointerPosition();
@@ -93,8 +105,11 @@ export function useFurniturePlacement(): IFurniturePlacementResult {
     furnitureStart,
     furniturePreview,
     previewRect,
+    isFurnitureDragging,
     handleStageClick,
     handleStageMouseMove,
+    handleFurnitureDragStart,
+    handleFurnitureDragEnd,
     reset,
   };
 }
