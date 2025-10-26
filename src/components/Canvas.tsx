@@ -103,6 +103,8 @@ export function Canvas() {
     }
   }
 
+  const room = state.room;
+
   return (
     <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
       <Stage
@@ -122,12 +124,12 @@ export function Canvas() {
         scaleY={editorState.viewport.scale}
         style={{ border: '1px solid #ddd', backgroundColor: '#fff' }}
       >
-        <Layer>
-          {state.room && (
+        {room &&
+          <Layer>
             <RoomStructure
-              walls={state.room.walls}
-              doors={state.room.doors}
-              unit={state.room.unit}
+              walls={room.walls}
+              doors={room.doors}
+              unit={room.unit}
               selectedEntityId={state.selectedEntityId}
               selectedEntityType={state.selectedEntityType}
               onWallSelect={entitySelection.handleWallClick}
@@ -135,41 +137,41 @@ export function Canvas() {
               onNewWallClick={wallCreationModal.handleNewWallClick}
               isDragging={canvasInteraction.isDragging}
             />
-          )}
 
-          {state.room?.furniture.map((furniture) => (
-            <Furniture
-              key={furniture.id}
-              furniture={furniture}
-              unit={state.room?.unit || 'cm'}
-              isSelected={state.selectedEntityId === furniture.id && state.selectedEntityType === 'furniture'}
-              onSelect={() => entitySelection.selectFurniture(furniture.id)}
-              onDragStart={furniturePlacement.handleFurnitureDragStart}
-              onDragEnd={(x, y) => handleFurnitureDragEnd(furniture.id, x, y)}
-            />
-          ))}
+            {room.furniture.map((furniture) => (
+              <Furniture
+                key={furniture.id}
+                furniture={furniture}
+                unit={room.unit}
+                isSelected={state.selectedEntityId === furniture.id && state.selectedEntityType === 'furniture'}
+                onSelect={() => entitySelection.selectFurniture(furniture.id)}
+                onDragStart={furniturePlacement.handleFurnitureDragStart}
+                onDragEnd={(x, y) => handleFurnitureDragEnd(furniture.id, x, y)}
+              />
+            ))}
 
-          {state.room && (
             <PreviewLayer
               furnitureStart={furniturePlacement.furnitureStart}
               previewRect={furniturePlacement.previewRect}
-              unit={state.room.unit}
+              unit={room.unit}
             />
-          )}
-        </Layer>
+          </Layer>
+        }
       </Stage>
 
       <RoomSetupModal
-        isOpen={!state.room}
+        isOpen={!room}
         onConfirm={handleRoomSetup}
       />
 
-      <NewWallModal
-        isOpen={wallCreationModal.isModalOpen && state.room !== null}
-        unit={state.room?.unit || 'cm'}
-        onConfirm={wallCreationModal.handleModalConfirm}
-        onCancel={wallCreationModal.handleModalCancel}
-      />
+      {room && 
+        <NewWallModal
+          isOpen={wallCreationModal.isModalOpen}
+          unit={room.unit}
+          onConfirm={wallCreationModal.handleModalConfirm}
+          onCancel={wallCreationModal.handleModalCancel}
+        />
+      }
     </div>
   );
 }
