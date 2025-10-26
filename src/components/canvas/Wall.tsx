@@ -35,7 +35,7 @@ export function Wall({
   onSelect,
   onMouseEnter,
   onMouseLeave,
-  onNewWallClick
+  onNewWallClick,
 }: IProps) {
   const { setHover, clearHover } = useHover();
   const isActive = isSelected || isHovered;
@@ -60,12 +60,7 @@ export function Wall({
   return (
     <Group>
       <Line
-        points={[
-          startPixels.x,
-          startPixels.y,
-          endPixels.x,
-          endPixels.y,
-        ]}
+        points={[startPixels.x, startPixels.y, endPixels.x, endPixels.y]}
         stroke={isSelected ? SELECTION_COLOR : isHovered ? HOVER_COLOR : WALL_COLOR}
         strokeWidth={wallThickness}
         lineCap="round"
@@ -80,8 +75,12 @@ export function Wall({
         <>
           {[perpendicularAngle1, perpendicularAngle2].map((angle) => {
             const angleRad = (angle * Math.PI) / 180;
-            const centerX = geometry.startPoint.x + (fromPixels(ARROW_BUTTON_DISTANCE_PX, unit)) * Math.cos(angleRad);
-            const centerY = geometry.startPoint.y + (fromPixels(ARROW_BUTTON_DISTANCE_PX, unit)) * Math.sin(angleRad);
+            const centerX =
+              geometry.startPoint.x +
+              fromPixels(ARROW_BUTTON_DISTANCE_PX, unit) * Math.cos(angleRad);
+            const centerY =
+              geometry.startPoint.y +
+              fromPixels(ARROW_BUTTON_DISTANCE_PX, unit) * Math.sin(angleRad);
 
             return (
               <NewWallButton
@@ -101,8 +100,10 @@ export function Wall({
         <>
           {[perpendicularAngle1, perpendicularAngle2].map((angle) => {
             const angleRad = (angle * Math.PI) / 180;
-            const centerX = geometry.endPoint.x + (fromPixels(ARROW_BUTTON_DISTANCE_PX, unit)) * Math.cos(angleRad);
-            const centerY = geometry.endPoint.y + (fromPixels(ARROW_BUTTON_DISTANCE_PX, unit)) * Math.sin(angleRad);
+            const centerX =
+              geometry.endPoint.x + fromPixels(ARROW_BUTTON_DISTANCE_PX, unit) * Math.cos(angleRad);
+            const centerY =
+              geometry.endPoint.y + fromPixels(ARROW_BUTTON_DISTANCE_PX, unit) * Math.sin(angleRad);
 
             return (
               <NewWallButton
@@ -120,4 +121,3 @@ export function Wall({
     </Group>
   );
 }
-

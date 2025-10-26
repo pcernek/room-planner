@@ -15,7 +15,10 @@ export function useWallCreationModal(): IWallCreationModalResult {
   const { state, dispatch } = useRoom();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingWallAngle, setPendingWallAngle] = useState<number>(0);
-  const [pendingFromNode, setPendingFromNode] = useState<{ wallId: string; endpoint: 'start' | 'end' } | null>(null);
+  const [pendingFromNode, setPendingFromNode] = useState<{
+    wallId: string;
+    endpoint: 'start' | 'end';
+  } | null>(null);
 
   useEffect(() => {
     if (state.room && state.room.walls.length === 0 && !isModalOpen) {
@@ -63,4 +66,3 @@ export function useWallCreationModal(): IWallCreationModalResult {
     handleNewWallClick,
   };
 }
-

@@ -6,7 +6,10 @@ import { propertyPanelStyles as styles } from './propertyPanelStyles';
 interface IProps {
   furniture: IFurniture;
   unit: Unit;
-  onUpdate: (id: string, updates: { name?: string; width?: number; height?: number; rotation?: number }) => void;
+  onUpdate: (
+    id: string,
+    updates: { name?: string; width?: number; height?: number; rotation?: number }
+  ) => void;
   onDelete: () => void;
 }
 
@@ -113,4 +116,3 @@ export function FurniturePropertiesPanel({ furniture, unit, onUpdate, onDelete }
     </div>
   );
 }
-

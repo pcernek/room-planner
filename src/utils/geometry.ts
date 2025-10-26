@@ -54,7 +54,10 @@ export function pointToLineDistance(point: IPoint, lineStart: IPoint, lineEnd: I
     return Math.sqrt(pdx * pdx + pdy * pdy);
   }
 
-  const t = Math.max(0, Math.min(1, ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lengthSquared));
+  const t = Math.max(
+    0,
+    Math.min(1, ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lengthSquared)
+  );
 
   const projectionX = lineStart.x + t * dx;
   const projectionY = lineStart.y + t * dy;
@@ -65,7 +68,12 @@ export function pointToLineDistance(point: IPoint, lineStart: IPoint, lineEnd: I
   return Math.sqrt(distX * distX + distY * distY);
 }
 
-export function isPointNearLine(point: IPoint, lineStart: IPoint, lineEnd: IPoint, threshold: number): boolean {
+export function isPointNearLine(
+  point: IPoint,
+  lineStart: IPoint,
+  lineEnd: IPoint,
+  threshold: number
+): boolean {
   return pointToLineDistance(point, lineStart, lineEnd) < threshold;
 }
 
@@ -74,4 +82,3 @@ export function distance(point1: IPoint, point2: IPoint): number {
   const dy = point2.y - point1.y;
   return Math.sqrt(dx * dx + dy * dy);
 }
-

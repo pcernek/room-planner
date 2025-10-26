@@ -64,4 +64,3 @@ export function calculateCenteredViewport(
 
   return { offsetX, offsetY, scale };
 }
-

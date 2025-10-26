@@ -11,7 +11,11 @@ interface IProps {
   unit: Unit;
   selectedEntityId: string | null;
   selectedEntityType: 'wall' | 'door' | 'furniture' | null;
-  onWallSelect: (wallId: string, e: Konva.KonvaEventObject<MouseEvent>, isDragging: boolean) => void;
+  onWallSelect: (
+    wallId: string,
+    e: Konva.KonvaEventObject<MouseEvent>,
+    isDragging: boolean
+  ) => void;
   onDoorSelect: (doorId: string) => void;
   onNewWallClick: (wallId: string, endpoint: 'start' | 'end', angle: number) => void;
   isDragging: boolean;
@@ -30,10 +34,7 @@ export function RoomStructure({
 }: IProps) {
   const [hoveredWallId, setHoveredWallId] = useState<string | null>(null);
 
-  const wallGeometries = useMemo(
-    () => calculateWallGeometries(walls),
-    [walls]
-  );
+  const wallGeometries = useMemo(() => calculateWallGeometries(walls), [walls]);
 
   const wallsWithFreeEndpoints = useMemo(() => {
     if (walls.length === 0) {
@@ -97,7 +98,9 @@ export function RoomStructure({
           key={geometry.id}
           geometry={geometry}
           unit={unit}
-          isSelected={!hoveredWallId && selectedEntityId === geometry.id && selectedEntityType === 'wall'}
+          isSelected={
+            !hoveredWallId && selectedEntityId === geometry.id && selectedEntityType === 'wall'
+          }
           isHovered={hoveredWallId === geometry.id}
           hasStartFree={wallsWithFreeEndpoints[0].has(geometry.id)}
           hasEndFree={wallsWithFreeEndpoints[1].has(geometry.id)}
@@ -125,4 +128,3 @@ export function RoomStructure({
     </>
   );
 }
-

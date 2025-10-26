@@ -7,7 +7,10 @@ interface IProps {
   wall: IWall;
   unit: Unit;
   isStandalone: boolean;
-  onUpdate: (id: string, updates: { length?: number; angle?: number; startPoint?: { x: number; y: number } }) => void;
+  onUpdate: (
+    id: string,
+    updates: { length?: number; angle?: number; startPoint?: { x: number; y: number } }
+  ) => void;
   onDelete: () => void;
 }
 
@@ -22,12 +25,9 @@ export function WallPropertiesPanel({ wall, unit, isStandalone, onUpdate, onDele
     setEditableAngle(wall.angle.toString());
   }, [wall.id, wall.length, wall.angle]);
 
-  const debouncedUpdate = useDebouncedCallback(
-    (updates: { length?: number; angle?: number }) => {
-      onUpdate(wall.id, updates);
-    },
-    500
-  );
+  const debouncedUpdate = useDebouncedCallback((updates: { length?: number; angle?: number }) => {
+    onUpdate(wall.id, updates);
+  }, 500);
 
   return (
     <div style={styles.propertyPanel}>
@@ -74,4 +74,3 @@ export function WallPropertiesPanel({ wall, unit, isStandalone, onUpdate, onDele
     </div>
   );
 }
-

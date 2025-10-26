@@ -16,14 +16,15 @@ export function useCursorEffect(stageContainer: HTMLDivElement | null) {
 
     if (hoverState.entityType === 'furniture') {
       stageContainer.style.cursor = hoverState.isSelected ? 'grab' : 'pointer';
-    } else if (hoverState.entityType === 'wall' ||
+    } else if (
+      hoverState.entityType === 'wall' ||
       hoverState.entityType === 'door' ||
       hoverState.entityType === 'endpoint' ||
-      hoverState.entityType === 'newWallButton') {
+      hoverState.entityType === 'newWallButton'
+    ) {
       stageContainer.style.cursor = 'pointer';
     } else {
       stageContainer.style.cursor = 'move';
     }
   }, [hoverState, editorState.activeTool, stageContainer]);
 }
-

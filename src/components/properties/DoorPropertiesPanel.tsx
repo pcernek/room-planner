@@ -6,7 +6,15 @@ import { propertyPanelStyles as styles } from './propertyPanelStyles';
 interface IProps {
   door: IDoor;
   unit: Unit;
-  onUpdate: (id: string, updates: { offsetFromStart?: number; width?: number; swapHinge?: boolean; reverseSwing?: boolean }) => void;
+  onUpdate: (
+    id: string,
+    updates: {
+      offsetFromStart?: number;
+      width?: number;
+      swapHinge?: boolean;
+      reverseSwing?: boolean;
+    }
+  ) => void;
   onDelete: () => void;
 }
 
@@ -22,7 +30,12 @@ export function DoorPropertiesPanel({ door, unit, onUpdate, onDelete }: IProps) 
   }, [door.id, door.offsetFromStart, door.width]);
 
   const debouncedUpdate = useDebouncedCallback(
-    (updates: { offsetFromStart?: number; width?: number; swapHinge?: boolean; reverseSwing?: boolean }) => {
+    (updates: {
+      offsetFromStart?: number;
+      width?: number;
+      swapHinge?: boolean;
+      reverseSwing?: boolean;
+    }) => {
       onUpdate(door.id, updates);
     },
     500
@@ -75,16 +88,10 @@ export function DoorPropertiesPanel({ door, unit, onUpdate, onDelete }: IProps) 
         <div style={styles.propertyColumn}>
           <label style={styles.label}>Door Swing</label>
           <div style={styles.flipButtonsContainer}>
-            <button
-              onClick={handleSwapHinge}
-              style={styles.flipButton}
-            >
+            <button onClick={handleSwapHinge} style={styles.flipButton}>
               Swap Hinge
             </button>
-            <button
-              onClick={handleReverseSwing}
-              style={styles.flipButton}
-            >
+            <button onClick={handleReverseSwing} style={styles.flipButton}>
               Reverse Swing
             </button>
           </div>
@@ -96,4 +103,3 @@ export function DoorPropertiesPanel({ door, unit, onUpdate, onDelete }: IProps) 
     </div>
   );
 }
-

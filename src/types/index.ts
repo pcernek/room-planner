@@ -82,4 +82,3 @@ export interface IViewport {
 }
 
 export type Tool = 'select' | 'placeFurniture';
-

@@ -6,7 +6,11 @@ interface IEntitySelectionResult {
   selectDoor: (doorId: string) => void;
   selectFurniture: (furnitureId: string) => void;
   clearSelection: () => void;
-  handleWallClick: (wallId: string, e: Konva.KonvaEventObject<MouseEvent>, isDragging: boolean) => void;
+  handleWallClick: (
+    wallId: string,
+    e: Konva.KonvaEventObject<MouseEvent>,
+    isDragging: boolean
+  ) => void;
 }
 
 export function useEntitySelection(): IEntitySelectionResult {
@@ -40,7 +44,11 @@ export function useEntitySelection(): IEntitySelectionResult {
     });
   }
 
-  function handleWallClick(wallId: string, e: Konva.KonvaEventObject<MouseEvent>, isDragging: boolean) {
+  function handleWallClick(
+    wallId: string,
+    e: Konva.KonvaEventObject<MouseEvent>,
+    isDragging: boolean
+  ) {
     e.cancelBubble = true;
     if (!isDragging) {
       selectWall(wallId);
@@ -55,4 +63,3 @@ export function useEntitySelection(): IEntitySelectionResult {
     handleWallClick,
   };
 }
-

@@ -30,11 +30,14 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     height: STAGE_HEIGHT,
   });
 
-  const [viewport, setViewportState] = useLocalStorage<IViewport>('room-planner-viewport', DEFAULT_VIEWPORT);
+  const [viewport, setViewportState] = useLocalStorage<IViewport>(
+    'room-planner-viewport',
+    DEFAULT_VIEWPORT
+  );
   const [activeTool, setActiveTool] = useState<Tool>('select');
 
   const setViewport = (updates: Partial<IViewport>) => {
-    setViewportState(prev => ({ ...prev, ...updates }));
+    setViewportState((prev) => ({ ...prev, ...updates }));
   };
 
   return (
@@ -58,4 +61,3 @@ export function useEditor() {
   }
   return context;
 }
-

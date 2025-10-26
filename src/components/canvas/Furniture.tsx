@@ -19,7 +19,14 @@ interface IProps {
   onDragEnd: (x: number, y: number) => void;
 }
 
-export function Furniture({ furniture, unit, isSelected, onSelect, onDragStart, onDragEnd }: IProps) {
+export function Furniture({
+  furniture,
+  unit,
+  isSelected,
+  onSelect,
+  onDragStart,
+  onDragEnd,
+}: IProps) {
   const width = furniture.width;
   const height = furniture.height;
   const positionPixels = pointToPixels(furniture.position, unit);
@@ -28,7 +35,8 @@ export function Furniture({ furniture, unit, isSelected, onSelect, onDragStart, 
   const rotationRad = (furniture.rotation * Math.PI) / 180;
   const widthPixels = toPixels(width, unit);
   const heightPixels = toPixels(height, unit);
-  const boundingWidth = Math.abs(widthPixels * Math.cos(rotationRad)) + Math.abs(heightPixels * Math.sin(rotationRad));
+  const boundingWidth =
+    Math.abs(widthPixels * Math.cos(rotationRad)) + Math.abs(heightPixels * Math.sin(rotationRad));
 
   useEffect(() => {
     if (hoverState.entityType === 'furniture' && hoverState.entityId === furniture.id) {
@@ -85,9 +93,9 @@ export function Furniture({ furniture, unit, isSelected, onSelect, onDragStart, 
           width={toPixels(width, unit)}
           height={toPixels(height, unit)}
           fill={FURNITURE_COLOR}
-          stroke={isSelected ? SELECTION_COLOR : "#FFF"}
+          stroke={isSelected ? SELECTION_COLOR : '#FFF'}
           strokeWidth={1}
-        // dash={isSelected ? [10, 5] : undefined}
+          // dash={isSelected ? [10, 5] : undefined}
         />
       </Group>
       <Text
@@ -103,4 +111,3 @@ export function Furniture({ furniture, unit, isSelected, onSelect, onDragStart, 
     </Group>
   );
 }
-

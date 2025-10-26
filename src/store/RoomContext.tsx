@@ -9,7 +9,13 @@ function loadRoomFromStorage(): IRoom | null {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (parsed && typeof parsed === 'object' && Array.isArray(parsed.walls) && parsed.name && parsed.unit) {
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        Array.isArray(parsed.walls) &&
+        parsed.name &&
+        parsed.unit
+      ) {
         if (Array.isArray(parsed.doors)) {
           parsed.doors = parsed.doors.map((door: IDoor) => ({
             ...door,
@@ -20,22 +26,24 @@ function loadRoomFromStorage(): IRoom | null {
 
         if (parsed.originWallId) {
           let currentPoint = { x: 0, y: 0 };
-          const migratedWalls = parsed.walls.map((wall: IWall & { previousWallId?: string | null }) => {
-            const startPoint = currentPoint;
-            const angleRad = (wall.angle * Math.PI) / 180;
-            currentPoint = {
-              x: currentPoint.x + wall.length * Math.cos(angleRad),
-              y: currentPoint.y + wall.length * Math.sin(angleRad),
-            };
+          const migratedWalls = parsed.walls.map(
+            (wall: IWall & { previousWallId?: string | null }) => {
+              const startPoint = currentPoint;
+              const angleRad = (wall.angle * Math.PI) / 180;
+              currentPoint = {
+                x: currentPoint.x + wall.length * Math.cos(angleRad),
+                y: currentPoint.y + wall.length * Math.sin(angleRad),
+              };
 
-            return {
-              id: wall.id,
-              startPoint,
-              length: wall.length,
-              angle: wall.angle,
-              unit: wall.unit,
-            };
-          });
+              return {
+                id: wall.id,
+                startPoint,
+                length: wall.length,
+                angle: wall.angle,
+                unit: wall.unit,
+              };
+            }
+          );
 
           const originGeometry = migratedWalls.find((w: IWall) => w.id === parsed.originWallId);
           if (originGeometry) {
@@ -82,7 +90,10 @@ type RoomAction =
   | { type: 'ADD_FURNITURE'; payload: INewFurniture }
   | { type: 'UPDATE_FURNITURE'; payload: { id: string; updates: Partial<IFurniture> } }
   | { type: 'DELETE_FURNITURE'; payload: string }
-  | { type: 'SET_SELECTED_ENTITY'; payload: { id: string | null; entityType: 'wall' | 'door' | 'furniture' | null } }
+  | {
+      type: 'SET_SELECTED_ENTITY';
+      payload: { id: string | null; entityType: 'wall' | 'door' | 'furniture' | null };
+    }
   | { type: 'CLEAR_ROOM' };
 
 const initialState: IRoomState = {
@@ -119,7 +130,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
       if (!fromNode) {
         startPoint = { x: 0, y: 0 };
       } else {
-        const sourceWall = state.room.walls.find(w => w.id === fromNode.wallId);
+        const sourceWall = state.room.walls.find((w) => w.id === fromNode.wallId);
         if (!sourceWall) return state;
 
         const angleRad = (sourceWall.angle * Math.PI) / 180;
@@ -151,7 +162,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
 
     case 'UPDATE_WALL': {
       if (!state.room) return state;
-      const newWalls = state.room.walls.map(wall =>
+      const newWalls = state.room.walls.map((wall) =>
         wall.id === action.payload.id ? { ...wall, ...action.payload.updates } : wall
       );
       return { ...state, room: { ...state.room, walls: newWalls } };
@@ -160,8 +171,8 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
     case 'DELETE_WALL': {
       if (!state.room) return state;
 
-      const newWalls = state.room.walls.filter(wall => wall.id !== action.payload);
-      const newDoors = state.room.doors.filter(door => door.wallId !== action.payload);
+      const newWalls = state.room.walls.filter((wall) => wall.id !== action.payload);
+      const newDoors = state.room.doors.filter((door) => door.wallId !== action.payload);
 
       return {
         ...state,
@@ -190,7 +201,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
 
     case 'UPDATE_DOOR': {
       if (!state.room) return state;
-      const newDoors = state.room.doors.map(door =>
+      const newDoors = state.room.doors.map((door) =>
         door.id === action.payload.id ? { ...door, ...action.payload.updates } : door
       );
       return { ...state, room: { ...state.room, doors: newDoors } };
@@ -198,7 +209,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
 
     case 'DELETE_DOOR': {
       if (!state.room) return state;
-      const newDoors = state.room.doors.filter(door => door.id !== action.payload);
+      const newDoors = state.room.doors.filter((door) => door.id !== action.payload);
       return { ...state, room: { ...state.room, doors: newDoors } };
     }
 
@@ -219,7 +230,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
 
     case 'UPDATE_FURNITURE': {
       if (!state.room) return state;
-      const newFurniture = state.room.furniture.map(furniture =>
+      const newFurniture = state.room.furniture.map((furniture) =>
         furniture.id === action.payload.id ? { ...furniture, ...action.payload.updates } : furniture
       );
       return { ...state, room: { ...state.room, furniture: newFurniture } };
@@ -227,7 +238,9 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
 
     case 'DELETE_FURNITURE': {
       if (!state.room) return state;
-      const newFurniture = state.room.furniture.filter(furniture => furniture.id !== action.payload);
+      const newFurniture = state.room.furniture.filter(
+        (furniture) => furniture.id !== action.payload
+      );
       return { ...state, room: { ...state.room, furniture: newFurniture } };
     }
 
@@ -269,11 +282,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
     }
   }, [state.room]);
 
-  return (
-    <RoomContext.Provider value={{ state, dispatch }}>
-      {children}
-    </RoomContext.Provider>
-  );
+  return <RoomContext.Provider value={{ state, dispatch }}>{children}</RoomContext.Provider>;
 }
 
 export function useRoom() {
@@ -283,4 +292,3 @@ export function useRoom() {
   }
   return context;
 }
-

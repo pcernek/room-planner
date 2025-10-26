@@ -151,4 +151,3 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: '500',
   },
 };
-

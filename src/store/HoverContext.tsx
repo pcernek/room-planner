@@ -25,13 +25,16 @@ const DEFAULT_HOVER_STATE: IHoverState = {
 export function HoverProvider({ children }: { children: ReactNode }) {
   const [hoverState, setHoverState] = useState<IHoverState>(DEFAULT_HOVER_STATE);
 
-  const setHover = useCallback((entityType: HoverEntityType, entityId: string | null, isSelected?: boolean) => {
-    setHoverState({
-      entityType,
-      entityId,
-      isSelected,
-    });
-  }, []);
+  const setHover = useCallback(
+    (entityType: HoverEntityType, entityId: string | null, isSelected?: boolean) => {
+      setHoverState({
+        entityType,
+        entityId,
+        isSelected,
+      });
+    },
+    []
+  );
 
   const clearHover = useCallback(() => {
     setHoverState(DEFAULT_HOVER_STATE);
@@ -51,4 +54,3 @@ export function useHover() {
   }
   return context;
 }
-

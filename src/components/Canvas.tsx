@@ -80,7 +80,11 @@ export function Canvas() {
       const stage = e.target.getStage();
       if (!stage) return;
 
-      const newFurniture = furniturePlacement.handleStageClick(stage, editorState.viewport, state.room.unit);
+      const newFurniture = furniturePlacement.handleStageClick(
+        stage,
+        editorState.viewport,
+        state.room.unit
+      );
 
       if (newFurniture) {
         dispatch({ type: 'ADD_FURNITURE', payload: newFurniture });
@@ -111,7 +115,9 @@ export function Canvas() {
         ref={stageRef}
         width={editorState.canvasDimensions.width}
         height={editorState.canvasDimensions.height}
-        draggable={!furniturePlacement.isFurnitureDragging && editorState.activeTool !== 'placeFurniture'}
+        draggable={
+          !furniturePlacement.isFurnitureDragging && editorState.activeTool !== 'placeFurniture'
+        }
         onDragStart={canvasInteraction.handleStageDragStart}
         onDragEnd={canvasInteraction.handleStageDragEnd}
         onWheel={canvasInteraction.handleWheel}
@@ -124,7 +130,7 @@ export function Canvas() {
         scaleY={editorState.viewport.scale}
         style={{ border: '1px solid #ddd', backgroundColor: '#fff' }}
       >
-        {room &&
+        {room && (
           <Layer>
             <RoomStructure
               walls={room.walls}
@@ -143,7 +149,10 @@ export function Canvas() {
                 key={furniture.id}
                 furniture={furniture}
                 unit={room.unit}
-                isSelected={state.selectedEntityId === furniture.id && state.selectedEntityType === 'furniture'}
+                isSelected={
+                  state.selectedEntityId === furniture.id &&
+                  state.selectedEntityType === 'furniture'
+                }
                 onSelect={() => entitySelection.selectFurniture(furniture.id)}
                 onDragStart={furniturePlacement.handleFurnitureDragStart}
                 onDragEnd={(x, y) => handleFurnitureDragEnd(furniture.id, x, y)}
@@ -156,22 +165,19 @@ export function Canvas() {
               unit={room.unit}
             />
           </Layer>
-        }
+        )}
       </Stage>
 
-      <RoomSetupModal
-        isOpen={!room}
-        onConfirm={handleRoomSetup}
-      />
+      <RoomSetupModal isOpen={!room} onConfirm={handleRoomSetup} />
 
-      {room && 
+      {room && (
         <NewWallModal
           isOpen={wallCreationModal.isModalOpen}
           unit={room.unit}
           onConfirm={wallCreationModal.handleModalConfirm}
           onCancel={wallCreationModal.handleModalCancel}
         />
-      }
+      )}
     </div>
   );
 }

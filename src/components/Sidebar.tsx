@@ -71,7 +71,10 @@ export function Sidebar() {
     dispatch({ type: 'SET_SELECTED_ENTITY', payload: { id: null, entityType: null } });
   }
 
-  function handleUpdateWall(id: string, updates: { length?: number; angle?: number; startPoint?: { x: number; y: number } }) {
+  function handleUpdateWall(
+    id: string,
+    updates: { length?: number; angle?: number; startPoint?: { x: number; y: number } }
+  ) {
     dispatch({
       type: 'UPDATE_WALL',
       payload: { id, updates },
@@ -85,7 +88,10 @@ export function Sidebar() {
     });
   }
 
-  function handleUpdateFurniture(id: string, updates: { name?: string; width?: number; height?: number; rotation?: number }) {
+  function handleUpdateFurniture(
+    id: string,
+    updates: { name?: string; width?: number; height?: number; rotation?: number }
+  ) {
     dispatch({
       type: 'UPDATE_FURNITURE',
       payload: { id, updates },
@@ -181,9 +187,7 @@ export function Sidebar() {
         </button>
       </div>
 
-      <div style={styles.section}>
-        {renderSelectedEntityPanel()}
-      </div>
+      <div style={styles.section}>{renderSelectedEntityPanel()}</div>
     </div>
   );
 }
@@ -247,4 +251,3 @@ const styles: Record<string, React.CSSProperties> = {
     fontStyle: 'italic',
   },
 };
-

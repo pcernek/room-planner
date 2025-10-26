@@ -61,4 +61,3 @@ export const propertyPanelStyles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
 };
-

@@ -16,7 +16,14 @@ interface IProps {
   onSelect?: (e: Konva.KonvaEventObject<MouseEvent>) => void;
 }
 
-export function Endpoint({ point, unit, isFree = false, onMouseEnter, onMouseLeave, onSelect }: IProps) {
+export function Endpoint({
+  point,
+  unit,
+  isFree = false,
+  onMouseEnter,
+  onMouseLeave,
+  onSelect,
+}: IProps) {
   const { setHover, clearHover } = useHover();
   const pixelPoint = pointToPixels(point, unit);
 
@@ -60,4 +67,3 @@ export function Endpoint({ point, unit, isFree = false, onMouseEnter, onMouseLea
     />
   );
 }
-

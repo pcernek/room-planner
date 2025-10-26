@@ -99,4 +99,3 @@ export function Door({ door, wallGeometry, unit, isSelected, onSelect }: IProps)
     </>
   );
 }
-

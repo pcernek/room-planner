@@ -128,10 +128,7 @@ export function Toolbar() {
     <div style={styles.toolbar}>
       <div style={styles.leftSection}>
         <div style={styles.menuContainer} ref={menuRef}>
-          <button
-            onClick={() => setIsFileMenuOpen(!isFileMenuOpen)}
-            style={styles.button}
-          >
+          <button onClick={() => setIsFileMenuOpen(!isFileMenuOpen)} style={styles.button}>
             File ▾
           </button>
           {isFileMenuOpen && (
@@ -187,7 +184,8 @@ export function Toolbar() {
           <>
             <span style={styles.roomName}>{state.room.name}</span>
             <span style={styles.stats}>
-              Walls: {state.room.walls.length} | Doors: {state.room.doors.length} | Furniture: {state.room.furniture.length}
+              Walls: {state.room.walls.length} | Doors: {state.room.doors.length} | Furniture:{' '}
+              {state.room.furniture.length}
             </span>
           </>
         )}
@@ -300,4 +298,3 @@ const styles: Record<string, React.CSSProperties> = {
     margin: '4px 0',
   },
 };
-

@@ -39,4 +39,3 @@ export function PreviewLayer({ furnitureStart, previewRect, unit }: IPreviewLaye
     </Fragment>
   );
 }
-

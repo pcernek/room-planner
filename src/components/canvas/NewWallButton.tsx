@@ -44,15 +44,7 @@ export function NewWallButton({ x, y, angle, size, onClick }: IProps) {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       />
-      <Text
-        text="→"
-        fontSize={20}
-        fill="#fff"
-        offsetX={6}
-        offsetY={10}
-        listening={false}
-      />
+      <Text text="→" fontSize={20} fill="#fff" offsetX={6} offsetY={10} listening={false} />
     </Group>
   );
 }
-

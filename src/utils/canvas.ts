@@ -30,7 +30,10 @@ export function fromPixels(pixels: number, unit: Unit): number {
 /**
  * Convert a point from logical units to pixels.
  */
-export function pointToPixels(point: { x: number; y: number }, unit: Unit): { x: number; y: number } {
+export function pointToPixels(
+  point: { x: number; y: number },
+  unit: Unit
+): { x: number; y: number } {
   const scale = getScaleFactor(unit);
   return {
     x: point.x * scale,
@@ -41,11 +44,13 @@ export function pointToPixels(point: { x: number; y: number }, unit: Unit): { x:
 /**
  * Convert a point from pixels to logical units.
  */
-export function pointFromPixels(point: { x: number; y: number }, unit: Unit): { x: number; y: number } {
+export function pointFromPixels(
+  point: { x: number; y: number },
+  unit: Unit
+): { x: number; y: number } {
   const scale = getScaleFactor(unit);
   return {
     x: point.x / scale,
     y: point.y / scale,
   };
 }
-
