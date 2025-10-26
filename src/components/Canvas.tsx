@@ -1,12 +1,10 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Stage, Layer } from 'react-konva';
 import Konva from 'konva';
 import { useRoom } from '../store/RoomContext';
 import { useEditor } from '../store/EditorContext';
-import { calculateWallGeometries } from '../utils/geometry';
 import { Unit } from '../types';
-import { Wall } from './canvas/Wall';
-import { Door } from './canvas/Door';
+import { RoomStructure } from './canvas/RoomStructure';
 import { Furniture } from './canvas/Furniture';
 import { NewWallModal } from './NewWallModal';
 import { RoomSetupModal } from './RoomSetupModal';
@@ -23,7 +21,6 @@ export function Canvas() {
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [stageContainer, setStageContainer] = useState<HTMLDivElement | null>(null);
-  const [hoveredWallId, setHoveredWallId] = useState<string | null>(null);
 
   const furniturePlacement = useFurniturePlacement();
   const wallCreationModal = useWallCreationModal();
@@ -62,21 +59,6 @@ export function Canvas() {
       furniturePlacement.reset();
     }
   }, [editorState.activeTool, furniturePlacement]);
-
-  const wallGeometries = useMemo(
-    () => state.room ? calculateWallGeometries(state.room.walls, state.room.originWallId) : new Map(),
-    [state.room?.walls, state.room?.originWallId]
-  );
-
-  const [firstWallId, lastWallId] = useMemo(() => {
-    if (!state.room || state.room.walls.length === 0) {
-      return [null, null];
-    }
-
-    const firstWall = state.room.walls[0]
-    const lastWall = state.room.walls[state.room.walls.length - 1];
-    return [firstWall?.id, lastWall?.id];
-  }, [state.room?.walls.length]);
 
   function handleFurnitureDragEnd(furnitureId: string, x: number, y: number) {
     furniturePlacement.handleFurnitureDragEnd();
@@ -141,36 +123,19 @@ export function Canvas() {
         style={{ border: '1px solid #ddd', backgroundColor: '#fff' }}
       >
         <Layer>
-          {Array.from(wallGeometries.values()).map((geometry) => (
-            <Wall
-              key={geometry.id}
-              geometry={geometry}
-              unit={state.room?.unit || 'cm'}
-              isSelected={!hoveredWallId && state.selectedEntityId === geometry.id && state.selectedEntityType === 'wall'}
-              isHovered={hoveredWallId === geometry.id}
-              hasStartFree={geometry.id === firstWallId}
-              hasEndFree={geometry.id === lastWallId}
-              onSelect={(e) => entitySelection.handleWallClick(geometry.id, e, canvasInteraction.isDragging)}
-              onMouseEnter={() => setHoveredWallId(geometry.id)}
-              onMouseLeave={() => setHoveredWallId(null)}
-              onNewWallClick={(endpoint, angle) => wallCreationModal.handleNewWallClick(geometry.id, endpoint, angle)}
+          {state.room && (
+            <RoomStructure
+              walls={state.room.walls}
+              doors={state.room.doors}
+              unit={state.room.unit}
+              selectedEntityId={state.selectedEntityId}
+              selectedEntityType={state.selectedEntityType}
+              onWallSelect={entitySelection.handleWallClick}
+              onDoorSelect={entitySelection.selectDoor}
+              onNewWallClick={wallCreationModal.handleNewWallClick}
+              isDragging={canvasInteraction.isDragging}
             />
-          ))}
-
-          {state.room?.doors.map((door) => {
-            const wallGeometry = wallGeometries.get(door.wallId);
-            if (!wallGeometry) return null;
-            return (
-              <Door
-                key={door.id}
-                door={door}
-                wallGeometry={wallGeometry}
-                unit={state.room?.unit || 'cm'}
-                isSelected={state.selectedEntityId === door.id && state.selectedEntityType === 'door'}
-                onSelect={() => entitySelection.selectDoor(door.id)}
-              />
-            );
-          })}
+          )}
 
           {state.room?.furniture.map((furniture) => (
             <Furniture

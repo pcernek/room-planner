@@ -71,7 +71,7 @@ export function Sidebar() {
     dispatch({ type: 'SET_SELECTED_ENTITY', payload: { id: null, entityType: null } });
   }
 
-  function handleUpdateWall(id: string, updates: { length?: number; angle?: number }) {
+  function handleUpdateWall(id: string, updates: { length?: number; angle?: number; startPoint?: { x: number; y: number } }) {
     dispatch({
       type: 'UPDATE_WALL',
       payload: { id, updates },
@@ -101,14 +101,12 @@ export function Sidebar() {
       const wall = state.room.walls.find((w) => w.id === state.selectedEntityId);
       if (!wall) return null;
 
-      const canDelete = state.selectedEntityId === state.room.walls[0]?.id || state.selectedEntityId === state.room.walls[state.room.walls.length - 1]?.id;
       const isStandalone = state.room.walls.length === 1;
 
       return (
         <WallPropertiesPanel
           wall={wall}
           unit={state.room.unit}
-          canDelete={canDelete}
           isStandalone={isStandalone}
           onUpdate={handleUpdateWall}
           onDelete={handleDeleteSelected}

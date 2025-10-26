@@ -97,7 +97,7 @@ export function Toolbar() {
       return;
     }
 
-    const wallGeometries = calculateWallGeometries(state.room.walls, state.room.originWallId);
+    const wallGeometries = calculateWallGeometries(state.room.walls);
     const boundingBox = calculateBoundingBox(wallGeometries, state.room);
     const viewport = calculateCenteredViewport(boundingBox, width, height, BUFFER, state.room.unit);
 

@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { IRoom, IWall, IDoor, IFurniture, INewWall, INewDoor, INewFurniture, Unit } from '../types';
-import { addAngles } from '../utils/geometry';
 import { newEntityId } from '../utils/id';
 
 const LOCAL_STORAGE_KEY = 'room-planner-state';
@@ -18,6 +17,43 @@ function loadRoomFromStorage(): IRoom | null {
             reverseSwing: door.reverseSwing ?? false,
           }));
         }
+
+        if (parsed.originWallId) {
+          let currentPoint = { x: 0, y: 0 };
+          const migratedWalls = parsed.walls.map((wall: IWall & { previousWallId?: string | null }) => {
+            const startPoint = currentPoint;
+            const angleRad = (wall.angle * Math.PI) / 180;
+            currentPoint = {
+              x: currentPoint.x + wall.length * Math.cos(angleRad),
+              y: currentPoint.y + wall.length * Math.sin(angleRad),
+            };
+
+            return {
+              id: wall.id,
+              startPoint,
+              length: wall.length,
+              angle: wall.angle,
+              unit: wall.unit,
+            };
+          });
+
+          const originGeometry = migratedWalls.find((w: IWall) => w.id === parsed.originWallId);
+          if (originGeometry) {
+            const offsetX = originGeometry.startPoint.x;
+            const offsetY = originGeometry.startPoint.y;
+
+            migratedWalls.forEach((wall: IWall) => {
+              wall.startPoint = {
+                x: wall.startPoint.x - offsetX,
+                y: wall.startPoint.y - offsetY,
+              };
+            });
+          }
+
+          parsed.walls = migratedWalls;
+          delete parsed.originWallId;
+        }
+
         return parsed;
       }
     }
@@ -66,7 +102,6 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
         room: {
           name: action.payload.name,
           unit: action.payload.unit,
-          originWallId: null,
           walls: [],
           doors: [],
           furniture: [],
@@ -79,43 +114,36 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
       const { fromNode, ...wallData } = action.payload;
       const newWallId = newEntityId();
 
-      let newWall: IWall;
-      let updatedWalls = [...state.room.walls];
-      let newOriginWallId = state.room.originWallId;
+      let startPoint: { x: number; y: number };
 
       if (!fromNode) {
-        newWall = {
-          id: newWallId,
-          previousWallId: null,
-          ...wallData,
-        };
-        updatedWalls.push(newWall);
-        newOriginWallId = newOriginWallId || newWallId;
-      } else if (fromNode.endpoint === 'start') {
-        newWall = {
-          id: newWallId,
-          previousWallId: null,
-          ...wallData,
-          angle: addAngles(wallData.angle, 180),
-        };
-        updatedWalls = state.room.walls.map(wall =>
-          wall.id === fromNode.wallId
-            ? { ...wall, previousWallId: newWallId }
-            : wall
-        );
-        updatedWalls.unshift(newWall);
+        startPoint = { x: 0, y: 0 };
       } else {
-        newWall = {
-          id: newWallId,
-          previousWallId: fromNode.wallId,
-          ...wallData,
-        };
-        updatedWalls.push(newWall);
+        const sourceWall = state.room.walls.find(w => w.id === fromNode.wallId);
+        if (!sourceWall) return state;
+
+        const angleRad = (sourceWall.angle * Math.PI) / 180;
+        if (fromNode.endpoint === 'start') {
+          startPoint = sourceWall.startPoint;
+        } else {
+          startPoint = {
+            x: sourceWall.startPoint.x + sourceWall.length * Math.cos(angleRad),
+            y: sourceWall.startPoint.y + sourceWall.length * Math.sin(angleRad),
+          };
+        }
       }
+
+      const newWall: IWall = {
+        id: newWallId,
+        startPoint,
+        ...wallData,
+      };
+
+      const updatedWalls = [...state.room.walls, newWall];
 
       return {
         ...state,
-        room: { ...state.room, walls: updatedWalls, originWallId: newOriginWallId },
+        room: { ...state.room, walls: updatedWalls },
         selectedEntityId: newWallId,
         selectedEntityType: 'wall',
       };
@@ -131,29 +159,15 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
 
     case 'DELETE_WALL': {
       if (!state.room) return state;
-      const firstWallId = state.room.walls[0]?.id;
-      const lastWallId = state.room.walls[state.room.walls.length - 1]?.id;
-
-      if (action.payload !== firstWallId && action.payload !== lastWallId) {
-        return state;
-      }
 
       const newWalls = state.room.walls.filter(wall => wall.id !== action.payload);
-
-      let newOriginWallId = state.room.originWallId === action.payload ? null : state.room.originWallId;
-      let newFirstWallId: string | null = null;
-
-      if (newWalls.length > 0) {
-        newFirstWallId = newWalls.find(wall => !wall.previousWallId)?.id || null;
-
-        if (newOriginWallId && !newWalls.find(wall => wall.id === newOriginWallId)) {
-          newOriginWallId = newFirstWallId;
-        }
-      }
+      const newDoors = state.room.doors.filter(door => door.wallId !== action.payload);
 
       return {
         ...state,
-        room: { ...state.room, walls: newWalls, originWallId: newOriginWallId },
+        room: { ...state.room, walls: newWalls, doors: newDoors },
+        selectedEntityId: null,
+        selectedEntityType: null,
       };
     }
 

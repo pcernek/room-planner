@@ -6,13 +6,12 @@ import { propertyPanelStyles as styles } from './propertyPanelStyles';
 interface IProps {
   wall: IWall;
   unit: Unit;
-  canDelete: boolean;
   isStandalone: boolean;
-  onUpdate: (id: string, updates: { length?: number; angle?: number }) => void;
+  onUpdate: (id: string, updates: { length?: number; angle?: number; startPoint?: { x: number; y: number } }) => void;
   onDelete: () => void;
 }
 
-export function WallPropertiesPanel({ wall, unit, canDelete, isStandalone, onUpdate, onDelete }: IProps) {
+export function WallPropertiesPanel({ wall, unit, isStandalone, onUpdate, onDelete }: IProps) {
   const [editableLength, setEditableLength] = useState(wall.length.toString());
   const [editableAngle, setEditableAngle] = useState(wall.angle.toString());
 
@@ -68,11 +67,9 @@ export function WallPropertiesPanel({ wall, unit, canDelete, isStandalone, onUpd
             />
           </div>
         )}
-        {canDelete && (
-          <button onClick={onDelete} style={styles.deleteButton}>
-            Delete Wall
-          </button>
-        )}
+        <button onClick={onDelete} style={styles.deleteButton}>
+          Delete Wall
+        </button>
       </div>
     </div>
   );

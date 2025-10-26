@@ -20,53 +20,23 @@ export function addAngles(angle1: number, angle2: number): number {
   return normalizeAngle(angle1 + angle2);
 }
 
-export function calculateWallGeometries(orderedWalls: IWall[], originWallId: string | null): Map<string, IWallGeometry> {
+export function calculateWallGeometries(walls: IWall[]): Map<string, IWallGeometry> {
   const geometries = new Map<string, IWallGeometry>();
 
-  if (!originWallId || orderedWalls.length === 0) {
-    return geometries;
-  }
-
-  let currentPoint: IPoint = { x: 0, y: 0 };
-
-  for (const wall of orderedWalls) {
+  for (const wall of walls) {
     const length = wall.length;
     const angleRad = degreesToRadians(wall.angle);
     const endPoint: IPoint = {
-      x: currentPoint.x + length * Math.cos(angleRad),
-      y: currentPoint.y + length * Math.sin(angleRad),
+      x: wall.startPoint.x + length * Math.cos(angleRad),
+      y: wall.startPoint.y + length * Math.sin(angleRad),
     };
 
     geometries.set(wall.id, {
       id: wall.id,
-      startPoint: currentPoint,
+      startPoint: wall.startPoint,
       endPoint,
       angle: wall.angle,
       length,
-    });
-
-    currentPoint = endPoint;
-  }
-
-  const originGeometry = geometries.get(originWallId);
-  if (!originGeometry) {
-    return geometries;
-  }
-
-  const offsetX = originGeometry.startPoint.x;
-  const offsetY = originGeometry.startPoint.y;
-
-  for (const [wallId, geometry] of geometries) {
-    geometries.set(wallId, {
-      ...geometry,
-      startPoint: {
-        x: geometry.startPoint.x - offsetX,
-        y: geometry.startPoint.y - offsetY,
-      },
-      endPoint: {
-        x: geometry.endPoint.x - offsetX,
-        y: geometry.endPoint.y - offsetY,
-      },
     });
   }
 
