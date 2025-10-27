@@ -9,7 +9,7 @@ import { WallSequencePropertiesPanel } from './properties/WallSequenceProperties
 
 export function Sidebar() {
   const { state, dispatch } = useRoom();
-  const { setActiveTool } = useEditor();
+  const { state: editorState, setActiveTool } = useEditor();
   const [doorOffset, setDoorOffset] = useState('');
   const [doorWidth, setDoorWidth] = useState('');
 
@@ -24,6 +24,15 @@ export function Sidebar() {
 
   const unit = state.room.unit;
   const unitLabel = unit === 'cm' ? 'cm' : 'in';
+  const activeTool = editorState.activeTool;
+
+  function handleToolToggle(tool: 'placeWall' | 'placeDoor' | 'placeFurniture') {
+    if (activeTool === tool) {
+      setActiveTool('select');
+    } else {
+      setActiveTool(tool);
+    }
+  }
 
   function handleAddDoor() {
     if (!state.selectedEntityId || state.selectedEntityType !== 'wall') {
@@ -49,10 +58,6 @@ export function Sidebar() {
     dispatch({ type: 'ADD_DOOR', payload: newDoor });
     setDoorOffset('');
     setDoorWidth('');
-  }
-
-  function handleAddFurniture() {
-    setActiveTool('placeFurniture');
   }
 
   function handleDeleteSelected() {
@@ -170,43 +175,60 @@ export function Sidebar() {
       <h2 style={styles.title}>Room Planner</h2>
 
       <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Add Wall</h3>
-        <p style={styles.hint}>Click on canvas to place a new wall</p>
-        <button onClick={() => setActiveTool('placeWall')} style={styles.button}>
+        <button
+          onClick={() => handleToolToggle('placeWall')}
+          style={activeTool === 'placeWall' ? styles.buttonActive : styles.button}
+        >
           Add Wall
         </button>
+        {activeTool === 'placeWall' && (
+          <p style={styles.hint}>Click on canvas to place a new wall</p>
+        )}
       </div>
 
       <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Add Door</h3>
-        <p style={styles.hint}>Select a wall first</p>
-        <input
-          type="number"
-          step="any"
-          placeholder={`Offset (${unitLabel})`}
-          value={doorOffset}
-          onChange={(e) => setDoorOffset(e.target.value)}
-          style={styles.input}
-        />
-        <input
-          type="number"
-          step="any"
-          placeholder={`Width (${unitLabel})`}
-          value={doorWidth}
-          onChange={(e) => setDoorWidth(e.target.value)}
-          style={styles.input}
-        />
-        <button onClick={handleAddDoor} style={styles.button}>
+        <button
+          onClick={() => handleToolToggle('placeDoor')}
+          style={activeTool === 'placeDoor' ? styles.buttonActive : styles.button}
+        >
           Add Door
         </button>
+        {activeTool === 'placeDoor' && (
+          <>
+            <p style={styles.hint}>Select a wall first</p>
+            <input
+              type="number"
+              step="any"
+              placeholder={`Offset (${unitLabel})`}
+              value={doorOffset}
+              onChange={(e) => setDoorOffset(e.target.value)}
+              style={styles.input}
+            />
+            <input
+              type="number"
+              step="any"
+              placeholder={`Width (${unitLabel})`}
+              value={doorWidth}
+              onChange={(e) => setDoorWidth(e.target.value)}
+              style={styles.input}
+            />
+            <button onClick={handleAddDoor} style={styles.button}>
+              Add Door to Wall
+            </button>
+          </>
+        )}
       </div>
 
       <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Add Furniture</h3>
-        <p style={styles.hint}>Click on canvas to draw furniture bounding box</p>
-        <button onClick={handleAddFurniture} style={styles.button}>
+        <button
+          onClick={() => handleToolToggle('placeFurniture')}
+          style={activeTool === 'placeFurniture' ? styles.buttonActive : styles.button}
+        >
           Add Furniture
         </button>
+        {activeTool === 'placeFurniture' && (
+          <p style={styles.hint}>Click on canvas to draw furniture bounding box</p>
+        )}
       </div>
 
       <div style={styles.section}>{renderSelectedEntityPanel()}</div>
@@ -260,8 +282,19 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '14px',
     cursor: 'pointer',
   },
+  buttonActive: {
+    width: '100%',
+    padding: '10px',
+    backgroundColor: '#2E5F8E',
+    color: '#fff',
+    border: '2px solid #1E3A5F',
+    borderRadius: '4px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+  },
   hint: {
-    margin: '0 0 10px 0',
+    margin: '10px 0 10px 0',
     fontSize: '12px',
     color: '#999',
     fontStyle: 'italic',
