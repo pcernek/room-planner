@@ -3,12 +3,13 @@ import { Stage, Layer } from 'react-konva';
 import Konva from 'konva';
 import { useRoom } from '../store/RoomContext';
 import { useEditor } from '../store/EditorContext';
-import { Unit, INewDoor } from '../types';
+import { Unit, INewDoor, INewWall } from '../types';
 import { RoomStructure } from './canvas/RoomStructure';
 import { Furniture } from './canvas/Furniture';
 import { NewWallModal } from './NewWallModal';
 import { RoomSetupModal } from './RoomSetupModal';
 import { PreviewLayer } from './canvas/PreviewLayer';
+import { WallPreviewLayer } from './canvas/WallPreviewLayer';
 import { GridLayer } from './canvas/GridLayer';
 import { PropertiesFloatingCard } from './PropertiesFloatingCard';
 import { useFurniturePlacement } from '../hooks/useFurniturePlacement';
@@ -18,7 +19,7 @@ import { useCursorEffect } from '../hooks/useCursorEffect';
 import { useWallCreationModal } from '../hooks/useWallCreationModal';
 import { useCanvasInteraction } from '../hooks/useCanvasInteraction';
 import { useEntitySelection } from '../hooks/useEntitySelection';
-import { calculateWallGeometries } from '../utils/geometry';
+import { calculateWallGeometries, distance, radiansToDegrees } from '../utils/geometry';
 
 export function Canvas() {
   const { state, dispatch } = useRoom();
@@ -176,14 +177,27 @@ export function Canvas() {
       const stage = e.target.getStage();
       if (!stage) return;
 
-      const startPoint = wallPlacement.handleStageClick(
-        stage,
-        editorState.viewport,
-        state.room.unit
-      );
+      const result = wallPlacement.handleStageClick(stage, editorState.viewport, state.room.unit);
 
-      if (startPoint) {
-        wallCreationModal.openModalForNewWall(startPoint);
+      if (result) {
+        const wallLength = distance(result.start, result.end);
+        const dx = result.end.x - result.start.x;
+        const dy = result.end.y - result.start.y;
+        const angleRadians = Math.atan2(dy, dx);
+        const angleDegrees = radiansToDegrees(angleRadians);
+
+        const newWall: INewWall = {
+          length: wallLength,
+          unit: state.room.unit,
+          angle: angleDegrees,
+          fromNode: null,
+        };
+
+        dispatch({
+          type: 'ADD_WALL',
+          payload: { wall: newWall, startPoint: result.start },
+        });
+
         wallPlacement.reset();
         setActiveTool('select');
       }
@@ -205,6 +219,13 @@ export function Canvas() {
 
       furniturePlacement.handleStageMouseMove(stage, editorState.viewport, state.room.unit);
     }
+
+    if (editorState.activeTool === 'placeWall' && state.room) {
+      const stage = e.target.getStage();
+      if (!stage) return;
+
+      wallPlacement.handleStageMouseMove(stage, editorState.viewport, state.room.unit);
+    }
   }
 
   const room = state.room;
@@ -218,7 +239,8 @@ export function Canvas() {
         draggable={
           !furniturePlacement.isFurnitureDragging &&
           editorState.activeTool !== 'placeFurniture' &&
-          editorState.activeTool !== 'placeWall'
+          editorState.activeTool !== 'placeWall' &&
+          !wallPlacement.wallStartPoint
         }
         onDragStart={canvasInteraction.handleStageDragStart}
         onDragEnd={canvasInteraction.handleStageDragEnd}
@@ -274,6 +296,12 @@ export function Canvas() {
               <PreviewLayer
                 furnitureStart={furniturePlacement.furnitureStart}
                 previewRect={furniturePlacement.previewRect}
+                unit={room.unit}
+              />
+
+              <WallPreviewLayer
+                wallStart={wallPlacement.wallStartPoint}
+                wallPreview={wallPlacement.wallPreviewPoint}
                 unit={room.unit}
               />
             </Layer>
