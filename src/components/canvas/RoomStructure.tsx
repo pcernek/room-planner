@@ -16,7 +16,7 @@ interface IProps {
     isDragging: boolean
   ) => void;
   onDoorSelect: (doorId: string) => void;
-  onNewWallClick: (wallId: string, endpoint: 'start' | 'end', angle: number) => void;
+  onNewWallClick: (wallId: string, endpoint: 'start' | 'end') => void;
   onWallSequenceDragStart: () => void;
   onWallSequenceDragEnd: (sequenceId: string, x: number, y: number) => void;
   isDragging: boolean;

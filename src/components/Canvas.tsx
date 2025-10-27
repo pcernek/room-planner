@@ -155,6 +155,35 @@ export function Canvas() {
     dispatch({ type: 'INITIALIZE_ROOM', payload: { name, unit } });
   }
 
+  function handleNewWallFromEndpoint(wallId: string, endpoint: 'start' | 'end') {
+    if (!state.room) return;
+
+    if (
+      editorState.activeTool === 'placeWall' &&
+      wallPlacement.fromWallInfo?.wallId === wallId &&
+      wallPlacement.fromWallInfo?.endpoint === endpoint
+    ) {
+      wallPlacement.reset();
+      setActiveTool('select');
+      return;
+    }
+
+    const wallGeometry = wallGeometries.get(wallId);
+    if (!wallGeometry) return;
+
+    dispatch({
+      type: 'SET_SELECTED_ENTITY',
+      payload: {
+        id: wallId,
+        entityType: 'wall',
+      },
+    });
+
+    const startPoint = endpoint === 'start' ? wallGeometry.startPoint : wallGeometry.endPoint;
+    wallPlacement.startFromEndpoint(startPoint, wallId, endpoint, wallGeometry.angle);
+    setActiveTool('placeWall');
+  }
+
   function handleStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
     if (editorState.activeTool === 'placeFurniture' && state.room) {
       const stage = e.target.getStage();
@@ -181,22 +210,101 @@ export function Canvas() {
 
       if (result) {
         const wallLength = distance(result.start, result.end);
+
+        const minimumLength = state.room.unit === 'cm' ? 1 : 0.5;
+
+        if (wallLength < minimumLength) {
+          wallPlacement.reset();
+          setActiveTool('select');
+          return;
+        }
+
         const dx = result.end.x - result.start.x;
         const dy = result.end.y - result.start.y;
         const angleRadians = Math.atan2(dy, dx);
         const angleDegrees = radiansToDegrees(angleRadians);
 
-        const newWall: INewWall = {
-          length: wallLength,
-          unit: state.room.unit,
-          angle: angleDegrees,
-          fromNode: null,
-        };
+        if (wallPlacement.fromWallInfo) {
+          const sourceWallSequence = state.room.wallSequences.find((seq) =>
+            seq.walls.some((w) => w.id === wallPlacement.fromWallInfo?.wallId)
+          );
+          const sourceWall = sourceWallSequence?.walls.find(
+            (w) => w.id === wallPlacement.fromWallInfo?.wallId
+          );
 
-        dispatch({
-          type: 'ADD_WALL',
-          payload: { wall: newWall, startPoint: result.start },
-        });
+          if (sourceWall && sourceWallSequence) {
+            const angleDifference = Math.abs(angleDegrees - sourceWall.angle);
+            let normalizedDiff = Math.min(angleDifference, 360 - angleDifference);
+
+            if (wallPlacement.fromWallInfo.endpoint === 'start') {
+              const oppositeAngleDiff = Math.abs(angleDegrees - (sourceWall.angle + 180));
+              const normalizedOppositeDiff = Math.min(oppositeAngleDiff, 360 - oppositeAngleDiff);
+              normalizedDiff = Math.min(normalizedDiff, normalizedOppositeDiff);
+            }
+
+            if (normalizedDiff < 2) {
+              if (wallPlacement.fromWallInfo.endpoint === 'start') {
+                const angleRad = (angleDegrees * Math.PI) / 180;
+                const offsetX = wallLength * Math.cos(angleRad);
+                const offsetY = wallLength * Math.sin(angleRad);
+
+                dispatch({
+                  type: 'UPDATE_WALL',
+                  payload: {
+                    id: sourceWall.id,
+                    updates: { length: sourceWall.length + wallLength },
+                  },
+                });
+
+                dispatch({
+                  type: 'UPDATE_WALL_SEQUENCE_POSITION',
+                  payload: {
+                    id: sourceWallSequence.id,
+                    position: {
+                      x: sourceWallSequence.position.x + offsetX,
+                      y: sourceWallSequence.position.y + offsetY,
+                    },
+                  },
+                });
+              } else {
+                dispatch({
+                  type: 'UPDATE_WALL',
+                  payload: {
+                    id: sourceWall.id,
+                    updates: { length: sourceWall.length + wallLength },
+                  },
+                });
+              }
+            } else {
+              const newWall: INewWall = {
+                length: wallLength,
+                unit: state.room.unit,
+                angle: angleDegrees,
+                fromNode: {
+                  wallId: wallPlacement.fromWallInfo.wallId,
+                  endpoint: wallPlacement.fromWallInfo.endpoint,
+                },
+              };
+
+              dispatch({
+                type: 'ADD_WALL',
+                payload: newWall,
+              });
+            }
+          }
+        } else {
+          const newWall: INewWall = {
+            length: wallLength,
+            unit: state.room.unit,
+            angle: angleDegrees,
+            fromNode: null,
+          };
+
+          dispatch({
+            type: 'ADD_WALL',
+            payload: { wall: newWall, startPoint: result.start },
+          });
+        }
 
         wallPlacement.reset();
         setActiveTool('select');
@@ -264,6 +372,12 @@ export function Canvas() {
               />
             </Layer>
             <Layer>
+              <WallPreviewLayer
+                wallStart={wallPlacement.wallStartPoint}
+                wallPreview={wallPlacement.wallPreviewPoint}
+                unit={room.unit}
+              />
+
               <RoomStructure
                 wallSequences={room.wallSequences}
                 doors={room.doors}
@@ -272,7 +386,7 @@ export function Canvas() {
                 selectedEntityType={state.selectedEntityType}
                 onWallSelect={handleWallClickForDoorPlacement}
                 onDoorSelect={handleDoorSelect}
-                onNewWallClick={wallCreationModal.handleNewWallClick}
+                onNewWallClick={handleNewWallFromEndpoint}
                 onWallSequenceDragStart={handleWallSequenceDragStart}
                 onWallSequenceDragEnd={handleWallSequenceDragEnd}
                 isDragging={canvasInteraction.isDragging}
@@ -296,12 +410,6 @@ export function Canvas() {
               <PreviewLayer
                 furnitureStart={furniturePlacement.furnitureStart}
                 previewRect={furniturePlacement.previewRect}
-                unit={room.unit}
-              />
-
-              <WallPreviewLayer
-                wallStart={wallPlacement.wallStartPoint}
-                wallPreview={wallPlacement.wallPreviewPoint}
                 unit={room.unit}
               />
             </Layer>

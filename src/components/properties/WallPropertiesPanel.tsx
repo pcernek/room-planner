@@ -30,6 +30,7 @@ export function WallPropertiesPanel({ wall, unit, isStandalone, onUpdate, onDele
     <div style={styles.propertyPanel}>
       <h3 style={styles.panelTitle}>Wall</h3>
       <div style={styles.propertyContent}>
+        <div style={styles.hint}>Click on this wall again to select all walls connected to it.</div>
         <div style={styles.propertyColumn}>
           <label style={styles.label}>Length ({unitLabel})</label>
           <input

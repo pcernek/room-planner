@@ -23,7 +23,7 @@ interface IProps {
     isDragging: boolean
   ) => void;
   onDoorSelect: (doorId: string) => void;
-  onNewWallClick: (wallId: string, endpoint: 'start' | 'end', angle: number) => void;
+  onNewWallClick: (wallId: string, endpoint: 'start' | 'end') => void;
   onMouseEnter: (wallId: string) => void;
   onMouseLeave: () => void;
   onDragStart: () => void;
@@ -126,7 +126,7 @@ export function WallSequence({
             onSelect={(e) => onWallSelect(geometry.id, e, isDragging || isDraggingSequence)}
             onMouseEnter={() => onMouseEnter(geometry.id)}
             onMouseLeave={onMouseLeave}
-            onNewWallClick={(endpoint, angle) => onNewWallClick(geometry.id, endpoint, angle)}
+            onNewWallClick={(endpoint) => onNewWallClick(geometry.id, endpoint)}
           />
         );
       })}
