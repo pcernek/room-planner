@@ -10,6 +10,7 @@ import { NewWallModal } from './NewWallModal';
 import { RoomSetupModal } from './RoomSetupModal';
 import { PreviewLayer } from './canvas/PreviewLayer';
 import { GridLayer } from './canvas/GridLayer';
+import { PropertiesFloatingCard } from './PropertiesFloatingCard';
 import { useFurniturePlacement } from '../hooks/useFurniturePlacement';
 import { useWallPlacement } from '../hooks/useWallPlacement';
 import { useDoorPlacement } from '../hooks/useDoorPlacement';
@@ -290,6 +291,8 @@ export function Canvas() {
           onCancel={wallCreationModal.handleModalCancel}
         />
       )}
+
+      <PropertiesFloatingCard />
     </div>
   );
 }
