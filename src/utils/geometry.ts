@@ -103,3 +103,21 @@ export function distance(point1: IPoint, point2: IPoint): number {
   const dy = point2.y - point1.y;
   return Math.sqrt(dx * dx + dy * dy);
 }
+
+export function willExtendWall(
+  newWallAngle: number,
+  sourceWallAngle: number,
+  sourceEndpoint: 'start' | 'end',
+  angleTolerance: number = 2
+): boolean {
+  const angleDifference = Math.abs(newWallAngle - sourceWallAngle);
+  let normalizedDiff = Math.min(angleDifference, 360 - angleDifference);
+
+  if (sourceEndpoint === 'start') {
+    const oppositeAngleDiff = Math.abs(newWallAngle - (sourceWallAngle + 180));
+    const normalizedOppositeDiff = Math.min(oppositeAngleDiff, 360 - oppositeAngleDiff);
+    normalizedDiff = Math.min(normalizedDiff, normalizedOppositeDiff);
+  }
+
+  return normalizedDiff < angleTolerance;
+}

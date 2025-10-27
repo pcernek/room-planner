@@ -19,7 +19,12 @@ import { useCursorEffect } from '../hooks/useCursorEffect';
 import { useWallCreationModal } from '../hooks/useWallCreationModal';
 import { useCanvasInteraction } from '../hooks/useCanvasInteraction';
 import { useEntitySelection } from '../hooks/useEntitySelection';
-import { calculateWallGeometries, distance, radiansToDegrees } from '../utils/geometry';
+import {
+  calculateWallGeometries,
+  distance,
+  radiansToDegrees,
+  willExtendWall,
+} from '../utils/geometry';
 
 export function Canvas() {
   const { state, dispatch } = useRoom();
@@ -233,16 +238,9 @@ export function Canvas() {
           );
 
           if (sourceWall && sourceWallSequence) {
-            const angleDifference = Math.abs(angleDegrees - sourceWall.angle);
-            let normalizedDiff = Math.min(angleDifference, 360 - angleDifference);
-
-            if (wallPlacement.fromWallInfo.endpoint === 'start') {
-              const oppositeAngleDiff = Math.abs(angleDegrees - (sourceWall.angle + 180));
-              const normalizedOppositeDiff = Math.min(oppositeAngleDiff, 360 - oppositeAngleDiff);
-              normalizedDiff = Math.min(normalizedDiff, normalizedOppositeDiff);
-            }
-
-            if (normalizedDiff < 2) {
+            if (
+              willExtendWall(angleDegrees, sourceWall.angle, wallPlacement.fromWallInfo.endpoint)
+            ) {
               if (wallPlacement.fromWallInfo.endpoint === 'start') {
                 const angleRad = (angleDegrees * Math.PI) / 180;
                 const offsetX = wallLength * Math.cos(angleRad);
@@ -376,6 +374,14 @@ export function Canvas() {
                 wallStart={wallPlacement.wallStartPoint}
                 wallPreview={wallPlacement.wallPreviewPoint}
                 unit={room.unit}
+                fromWallInfo={wallPlacement.fromWallInfo}
+                sourceWall={
+                  wallPlacement.fromWallInfo
+                    ? room.wallSequences
+                        .flatMap((seq) => seq.walls)
+                        .find((wall) => wall.id === wallPlacement.fromWallInfo?.wallId)
+                    : undefined
+                }
               />
 
               <RoomStructure
