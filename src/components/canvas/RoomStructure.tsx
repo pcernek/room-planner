@@ -2,8 +2,7 @@ import { useMemo, useState } from 'react';
 import Konva from 'konva';
 import { IWallSequence, IDoor, Unit } from '../../types';
 import { calculateWallGeometries } from '../../utils/geometry';
-import { Wall } from './Wall';
-import { Door } from './Door';
+import { WallSequence } from './WallSequence';
 
 interface IProps {
   wallSequences: IWallSequence[];
@@ -18,6 +17,8 @@ interface IProps {
   ) => void;
   onDoorSelect: (doorId: string) => void;
   onNewWallClick: (wallId: string, endpoint: 'start' | 'end', angle: number) => void;
+  onWallSequenceDragStart: () => void;
+  onWallSequenceDragEnd: (sequenceId: string, x: number, y: number) => void;
   isDragging: boolean;
 }
 
@@ -30,21 +31,13 @@ export function RoomStructure({
   onWallSelect,
   onDoorSelect,
   onNewWallClick,
+  onWallSequenceDragStart,
+  onWallSequenceDragEnd,
   isDragging,
 }: IProps) {
   const [hoveredWallId, setHoveredWallId] = useState<string | null>(null);
 
   const wallGeometries = useMemo(() => calculateWallGeometries(wallSequences), [wallSequences]);
-
-  const wallToSequenceMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const sequence of wallSequences) {
-      for (const wall of sequence.walls) {
-        map.set(wall.id, sequence.id);
-      }
-    }
-    return map;
-  }, [wallSequences]);
 
   const wallsWithFreeEndpoints = useMemo(() => {
     if (wallSequences.length === 0) {
@@ -103,46 +96,31 @@ export function RoomStructure({
 
   return (
     <>
-      {Array.from(wallGeometries.values()).map((geometry) => {
-        const isPartOfSelectedSequence =
-          selectedEntityType === 'wallSequence' &&
-          wallToSequenceMap.get(geometry.id) === selectedEntityId;
-        const isIndividuallySelected =
-          !hoveredWallId && selectedEntityId === geometry.id && selectedEntityType === 'wall';
-        const isSelected = isIndividuallySelected || isPartOfSelectedSequence;
+      {wallSequences.map((sequence) => {
+        const isSequenceSelected =
+          selectedEntityType === 'wallSequence' && selectedEntityId === sequence.id;
 
         return (
-          <Wall
-            key={geometry.id}
-            geometry={geometry}
+          <WallSequence
+            key={sequence.id}
+            sequence={sequence}
+            wallGeometries={wallGeometries}
+            doors={doors}
             unit={unit}
-            isSelected={isSelected}
-            isHovered={hoveredWallId === geometry.id}
-            hasStartFree={
-              selectedEntityType !== 'wallSequence' && wallsWithFreeEndpoints[0].has(geometry.id)
-            }
-            hasEndFree={
-              selectedEntityType !== 'wallSequence' && wallsWithFreeEndpoints[1].has(geometry.id)
-            }
-            onSelect={(e) => onWallSelect(geometry.id, e, isDragging)}
-            onMouseEnter={() => setHoveredWallId(geometry.id)}
+            isSelected={isSequenceSelected}
+            selectedEntityId={selectedEntityId}
+            selectedEntityType={selectedEntityType}
+            hoveredWallId={hoveredWallId}
+            wallsWithFreeStart={wallsWithFreeEndpoints[0]}
+            wallsWithFreeEnd={wallsWithFreeEndpoints[1]}
+            onWallSelect={onWallSelect}
+            onDoorSelect={onDoorSelect}
+            onNewWallClick={onNewWallClick}
+            onMouseEnter={(wallId) => setHoveredWallId(wallId)}
             onMouseLeave={() => setHoveredWallId(null)}
-            onNewWallClick={(endpoint, angle) => onNewWallClick(geometry.id, endpoint, angle)}
-          />
-        );
-      })}
-
-      {doors.map((door) => {
-        const wallGeometry = wallGeometries.get(door.wallId);
-        if (!wallGeometry) return null;
-        return (
-          <Door
-            key={door.id}
-            door={door}
-            wallGeometry={wallGeometry}
-            unit={unit}
-            isSelected={selectedEntityId === door.id && selectedEntityType === 'door'}
-            onSelect={() => onDoorSelect(door.id)}
+            onDragStart={onWallSequenceDragStart}
+            onDragEnd={onWallSequenceDragEnd}
+            isDragging={isDragging}
           />
         );
       })}

@@ -71,6 +71,21 @@ export function Canvas() {
     });
   }
 
+  function handleWallSequenceDragStart() {
+    furniturePlacement.handleFurnitureDragStart();
+  }
+
+  function handleWallSequenceDragEnd(sequenceId: string, x: number, y: number) {
+    furniturePlacement.handleFurnitureDragEnd();
+    dispatch({
+      type: 'UPDATE_WALL_SEQUENCE_POSITION',
+      payload: {
+        id: sequenceId,
+        position: { x, y },
+      },
+    });
+  }
+
   function handleRoomSetup(name: string, unit: Unit) {
     dispatch({ type: 'INITIALIZE_ROOM', payload: { name, unit } });
   }
@@ -141,6 +156,8 @@ export function Canvas() {
               onWallSelect={entitySelection.handleWallClick}
               onDoorSelect={entitySelection.selectDoor}
               onNewWallClick={wallCreationModal.handleNewWallClick}
+              onWallSequenceDragStart={handleWallSequenceDragStart}
+              onWallSequenceDragEnd={handleWallSequenceDragEnd}
               isDragging={canvasInteraction.isDragging}
             />
 

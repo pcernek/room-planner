@@ -9,6 +9,7 @@ import {
   INewFurniture,
   Unit,
   IWallSequence,
+  IPoint,
 } from '../types';
 import { newEntityId } from '../utils/id';
 
@@ -95,6 +96,7 @@ type RoomAction =
   | { type: 'ADD_FURNITURE'; payload: INewFurniture }
   | { type: 'UPDATE_FURNITURE'; payload: { id: string; updates: Partial<IFurniture> } }
   | { type: 'DELETE_FURNITURE'; payload: string }
+  | { type: 'UPDATE_WALL_SEQUENCE_POSITION'; payload: { id: string; position: IPoint } }
   | {
       type: 'SET_SELECTED_ENTITY';
       payload: {
@@ -387,6 +389,16 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
         (furniture) => furniture.id !== action.payload
       );
       return { ...state, room: { ...state.room, furniture: newFurniture } };
+    }
+
+    case 'UPDATE_WALL_SEQUENCE_POSITION': {
+      if (!state.room) return state;
+      const updatedSequences = state.room.wallSequences.map((sequence) =>
+        sequence.id === action.payload.id
+          ? { ...sequence, position: action.payload.position }
+          : sequence
+      );
+      return { ...state, room: { ...state.room, wallSequences: updatedSequences } };
     }
 
     case 'SET_SELECTED_ENTITY':
