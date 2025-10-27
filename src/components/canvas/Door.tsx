@@ -5,7 +5,7 @@ import { toPixels, pointToPixels, fromPixels } from '../../utils/canvas';
 import { useHover } from '../../store/HoverContext';
 import { Angle } from '../../utils/Angle';
 
-const WALL_THICKNESS = 8;
+const DOOR_THICKNESS_PX = 16;
 const DOOR_COLOR = '#000000';
 const DOOR_FILL = '#FFFFFF';
 const ARC_COLOR = '#000000';
@@ -176,8 +176,8 @@ export function Door({
         x={0}
         y={0}
         width={doorWidthPixels}
-        height={WALL_THICKNESS}
-        offsetY={WALL_THICKNESS / 2}
+        height={DOOR_THICKNESS_PX}
+        offsetY={DOOR_THICKNESS_PX / 2}
         rotation={rectRotation}
         fill={isSelected ? SELECTION_COLOR : DOOR_FILL}
         stroke={isSelected ? SELECTION_COLOR : DOOR_COLOR}
