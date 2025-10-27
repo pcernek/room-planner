@@ -170,6 +170,14 @@ export function Sidebar() {
       <h2 style={styles.title}>Room Planner</h2>
 
       <div style={styles.section}>
+        <h3 style={styles.sectionTitle}>Add Wall</h3>
+        <p style={styles.hint}>Click on canvas to place a new wall</p>
+        <button onClick={() => setActiveTool('placeWall')} style={styles.button}>
+          Add Wall
+        </button>
+      </div>
+
+      <div style={styles.section}>
         <h3 style={styles.sectionTitle}>Add Door</h3>
         <p style={styles.hint}>Select a wall first</p>
         <input
@@ -198,14 +206,6 @@ export function Sidebar() {
         <p style={styles.hint}>Click on canvas to draw furniture bounding box</p>
         <button onClick={handleAddFurniture} style={styles.button}>
           Add Furniture
-        </button>
-      </div>
-
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Add Wall</h3>
-        <p style={styles.hint}>Click on canvas to place a new wall</p>
-        <button onClick={() => setActiveTool('placeWall')} style={styles.button}>
-          Add Wall
         </button>
       </div>
 
