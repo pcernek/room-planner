@@ -35,9 +35,29 @@ export function useCanvasInteraction({
 
   function handleWheel(e: Konva.KonvaEventObject<WheelEvent>) {
     e.evt.preventDefault();
+    const stage = e.target.getStage();
+    if (!stage) return;
+
+    const oldScale = viewport.scale;
     const delta = e.evt.deltaY > 0 ? 0.95 : 1.05;
-    const newScale = Math.max(0.1, Math.min(5, viewport.scale * delta));
-    setViewport({ scale: newScale });
+    const newScale = Math.max(0.1, Math.min(5, oldScale * delta));
+
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return;
+
+    const mousePointTo = {
+      x: (pointer.x - viewport.offsetX) / oldScale,
+      y: (pointer.y - viewport.offsetY) / oldScale,
+    };
+
+    const newOffsetX = pointer.x - mousePointTo.x * newScale;
+    const newOffsetY = pointer.y - mousePointTo.y * newScale;
+
+    setViewport({
+      scale: newScale,
+      offsetX: newOffsetX,
+      offsetY: newOffsetY,
+    });
   }
 
   return {
