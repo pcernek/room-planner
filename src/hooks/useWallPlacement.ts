@@ -38,53 +38,31 @@ interface IWallPlacementResult {
   reset: () => void;
 }
 
-function snapAngleTo45Degrees(angleRadians: number): number {
-  const angle = Angle.radians(angleRadians);
-  const snapped = angle.snapTo(45);
-  return snapped.getRadians();
-}
-
 function calculateSnappedEndpoint(
   start: IPoint,
   mousePoint: IPoint,
-  sourceWallAngle?: number,
-  sourceEndpoint?: 'start' | 'end'
+  sourceWallAngle?: number
 ): IPoint {
   const dx = mousePoint.x - start.x;
   const dy = mousePoint.y - start.y;
-  const rawAngle = Math.atan2(dy, dx);
-  const snappedAngle = snapAngleTo45Degrees(rawAngle);
-  const snappedAngleDegrees = Angle.radians(snappedAngle);
+  const rawAngle = Angle.radians(Math.atan2(dy, dx));
+  const snappedAngle = rawAngle.snapTo(45);
 
-  if (sourceWallAngle !== undefined && sourceEndpoint !== undefined) {
+  if (sourceWallAngle !== undefined) {
     const sourceAngle = Angle.degrees(sourceWallAngle);
 
-    // Check if the new wall would extend the existing wall (same direction)
-    const isExtending = snappedAngleDegrees.equals(sourceAngle);
-
-    if (sourceEndpoint === 'start') {
-      // When extending from start, backtracking means going in the same direction as the wall
-      // This is the same as extending, so we just need to check isExtending
-      const isBacktracking = isExtending;
-
-      if (isBacktracking) {
-        return start;
-      }
-    } else {
-      // When extending from end, backtracking means going opposite to the wall direction
-      const isBacktracking = snappedAngleDegrees.equals(sourceAngle.opposite());
-
-      if (isBacktracking || isExtending) {
-        return start;
-      }
+    if (sourceAngle.equals(snappedAngle) || sourceAngle.equals(snappedAngle.opposite())) {
+      // Prevent extension or back-tracking.
+      // TODO: in the future we may want to use this interface to support extension as well.
+      return start;
     }
   }
 
   const dist = distance(start, mousePoint);
 
   return {
-    x: start.x + dist * Math.cos(snappedAngle),
-    y: start.y + dist * Math.sin(snappedAngle),
+    x: start.x + dist * Math.cos(snappedAngle.getRadians()),
+    y: start.y + dist * Math.sin(snappedAngle.getRadians()),
   };
 }
 
@@ -131,8 +109,7 @@ export function useWallPlacement(): IWallPlacementResult {
       const snappedEnd = calculateSnappedEndpoint(
         wallStartPoint,
         mousePoint,
-        fromWallInfo?.wallAngle,
-        fromWallInfo?.endpoint
+        fromWallInfo?.wallAngle
       );
       return { start: wallStartPoint, end: snappedEnd };
     },
@@ -156,8 +133,7 @@ export function useWallPlacement(): IWallPlacementResult {
       const snappedEnd = calculateSnappedEndpoint(
         wallStartPoint,
         mousePoint,
-        fromWallInfo?.wallAngle,
-        fromWallInfo?.endpoint
+        fromWallInfo?.wallAngle
       );
       setWallPreviewPoint(snappedEnd);
     },
