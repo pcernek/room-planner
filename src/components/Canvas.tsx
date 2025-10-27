@@ -9,6 +9,7 @@ import { Furniture } from './canvas/Furniture';
 import { NewWallModal } from './NewWallModal';
 import { RoomSetupModal } from './RoomSetupModal';
 import { PreviewLayer } from './canvas/PreviewLayer';
+import { GridLayer } from './canvas/GridLayer';
 import { useFurniturePlacement } from '../hooks/useFurniturePlacement';
 import { useWallPlacement } from '../hooks/useWallPlacement';
 import { useDoorPlacement } from '../hooks/useDoorPlacement';
@@ -231,42 +232,51 @@ export function Canvas() {
         style={{ border: '1px solid #ddd', backgroundColor: '#fff' }}
       >
         {room && (
-          <Layer>
-            <RoomStructure
-              wallSequences={room.wallSequences}
-              doors={room.doors}
-              unit={room.unit}
-              selectedEntityId={state.selectedEntityId}
-              selectedEntityType={state.selectedEntityType}
-              onWallSelect={handleWallClickForDoorPlacement}
-              onDoorSelect={handleDoorSelect}
-              onNewWallClick={wallCreationModal.handleNewWallClick}
-              onWallSequenceDragStart={handleWallSequenceDragStart}
-              onWallSequenceDragEnd={handleWallSequenceDragEnd}
-              isDragging={canvasInteraction.isDragging}
-            />
-
-            {room.furniture.map((furniture) => (
-              <Furniture
-                key={furniture.id}
-                furniture={furniture}
+          <>
+            <Layer>
+              <GridLayer
                 unit={room.unit}
-                isSelected={
-                  state.selectedEntityId === furniture.id &&
-                  state.selectedEntityType === 'furniture'
-                }
-                onSelect={() => handleFurnitureSelect(furniture.id)}
-                onDragStart={furniturePlacement.handleFurnitureDragStart}
-                onDragEnd={(x, y) => handleFurnitureDragEnd(furniture.id, x, y)}
+                viewport={editorState.viewport}
+                canvasDimensions={editorState.canvasDimensions}
               />
-            ))}
+            </Layer>
+            <Layer>
+              <RoomStructure
+                wallSequences={room.wallSequences}
+                doors={room.doors}
+                unit={room.unit}
+                selectedEntityId={state.selectedEntityId}
+                selectedEntityType={state.selectedEntityType}
+                onWallSelect={handleWallClickForDoorPlacement}
+                onDoorSelect={handleDoorSelect}
+                onNewWallClick={wallCreationModal.handleNewWallClick}
+                onWallSequenceDragStart={handleWallSequenceDragStart}
+                onWallSequenceDragEnd={handleWallSequenceDragEnd}
+                isDragging={canvasInteraction.isDragging}
+              />
 
-            <PreviewLayer
-              furnitureStart={furniturePlacement.furnitureStart}
-              previewRect={furniturePlacement.previewRect}
-              unit={room.unit}
-            />
-          </Layer>
+              {room.furniture.map((furniture) => (
+                <Furniture
+                  key={furniture.id}
+                  furniture={furniture}
+                  unit={room.unit}
+                  isSelected={
+                    state.selectedEntityId === furniture.id &&
+                    state.selectedEntityType === 'furniture'
+                  }
+                  onSelect={() => handleFurnitureSelect(furniture.id)}
+                  onDragStart={furniturePlacement.handleFurnitureDragStart}
+                  onDragEnd={(x, y) => handleFurnitureDragEnd(furniture.id, x, y)}
+                />
+              ))}
+
+              <PreviewLayer
+                furnitureStart={furniturePlacement.furnitureStart}
+                previewRect={furniturePlacement.previewRect}
+                unit={room.unit}
+              />
+            </Layer>
+          </>
         )}
       </Stage>
 
