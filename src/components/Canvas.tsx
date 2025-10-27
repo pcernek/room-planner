@@ -10,6 +10,7 @@ import { NewWallModal } from './NewWallModal';
 import { RoomSetupModal } from './RoomSetupModal';
 import { PreviewLayer } from './canvas/PreviewLayer';
 import { useFurniturePlacement } from '../hooks/useFurniturePlacement';
+import { useWallPlacement } from '../hooks/useWallPlacement';
 import { useCursorEffect } from '../hooks/useCursorEffect';
 import { useWallCreationModal } from '../hooks/useWallCreationModal';
 import { useCanvasInteraction } from '../hooks/useCanvasInteraction';
@@ -23,6 +24,7 @@ export function Canvas() {
   const [stageContainer, setStageContainer] = useState<HTMLDivElement | null>(null);
 
   const furniturePlacement = useFurniturePlacement();
+  const wallPlacement = useWallPlacement();
   const wallCreationModal = useWallCreationModal();
   const entitySelection = useEntitySelection();
   const canvasInteraction = useCanvasInteraction({
@@ -59,6 +61,13 @@ export function Canvas() {
       furniturePlacement.reset();
     }
   }, [editorState.activeTool, furniturePlacement]);
+
+  // Reset wall placement when switching tools
+  useEffect(() => {
+    if (editorState.activeTool !== 'placeWall') {
+      wallPlacement.reset();
+    }
+  }, [editorState.activeTool, wallPlacement]);
 
   function handleFurnitureDragEnd(furnitureId: string, x: number, y: number) {
     furniturePlacement.handleFurnitureDragEnd();
@@ -108,6 +117,24 @@ export function Canvas() {
       return;
     }
 
+    if (editorState.activeTool === 'placeWall' && state.room) {
+      const stage = e.target.getStage();
+      if (!stage) return;
+
+      const startPoint = wallPlacement.handleStageClick(
+        stage,
+        editorState.viewport,
+        state.room.unit
+      );
+
+      if (startPoint) {
+        wallCreationModal.openModalForNewWall(startPoint);
+        wallPlacement.reset();
+        setActiveTool('select');
+      }
+      return;
+    }
+
     if (e.target === e.target.getStage()) {
       entitySelection.clearSelection();
     }
@@ -131,7 +158,9 @@ export function Canvas() {
         width={editorState.canvasDimensions.width}
         height={editorState.canvasDimensions.height}
         draggable={
-          !furniturePlacement.isFurnitureDragging && editorState.activeTool !== 'placeFurniture'
+          !furniturePlacement.isFurnitureDragging &&
+          editorState.activeTool !== 'placeFurniture' &&
+          editorState.activeTool !== 'placeWall'
         }
         onDragStart={canvasInteraction.handleStageDragStart}
         onDragEnd={canvasInteraction.handleStageDragEnd}

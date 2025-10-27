@@ -201,6 +201,14 @@ export function Sidebar() {
         </button>
       </div>
 
+      <div style={styles.section}>
+        <h3 style={styles.sectionTitle}>Add Wall</h3>
+        <p style={styles.hint}>Click on canvas to place a new wall</p>
+        <button onClick={() => setActiveTool('placeWall')} style={styles.button}>
+          Add Wall
+        </button>
+      </div>
+
       <div style={styles.section}>{renderSelectedEntityPanel()}</div>
     </div>
   );

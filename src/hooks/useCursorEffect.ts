@@ -9,7 +9,7 @@ export function useCursorEffect(stageContainer: HTMLDivElement | null) {
   useEffect(() => {
     if (!stageContainer) return;
 
-    if (editorState.activeTool === 'placeFurniture') {
+    if (editorState.activeTool === 'placeFurniture' || editorState.activeTool === 'placeWall') {
       stageContainer.style.cursor = 'crosshair';
       return;
     }

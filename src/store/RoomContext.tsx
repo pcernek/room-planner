@@ -87,7 +87,7 @@ interface IRoomState {
 type RoomAction =
   | { type: 'SET_ROOM'; payload: IRoom }
   | { type: 'INITIALIZE_ROOM'; payload: { name: string; unit: Unit } }
-  | { type: 'ADD_WALL'; payload: INewWall }
+  | { type: 'ADD_WALL'; payload: INewWall | { wall: INewWall; startPoint: IPoint } }
   | { type: 'UPDATE_WALL'; payload: { id: string; updates: Partial<IWall> } }
   | { type: 'DELETE_WALL'; payload: string }
   | { type: 'ADD_DOOR'; payload: INewDoor }
@@ -132,19 +132,29 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
     case 'ADD_WALL': {
       if (!state.room) return state;
 
-      const { fromNode, ...wallData } = action.payload;
+      let wallData: INewWall;
+      let startPoint: IPoint | undefined;
+
+      if ('wall' in action.payload) {
+        wallData = action.payload.wall;
+        startPoint = action.payload.startPoint;
+      } else {
+        wallData = action.payload;
+      }
+
+      const { fromNode, ...wallProps } = wallData;
       const newWallId = newEntityId();
 
       if (!fromNode) {
         const newWall: IWall = {
           id: newWallId,
           previousWallId: null,
-          ...wallData,
+          ...wallProps,
         };
 
         const newSequence: IWallSequence = {
           id: newEntityId(),
-          position: { x: 0, y: 0 },
+          position: startPoint || { x: 0, y: 0 },
           walls: [newWall],
         };
 
@@ -172,7 +182,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
         const newWall: IWall = {
           id: newWallId,
           previousWallId: null,
-          ...wallData,
+          ...wallProps,
         };
 
         let updatedSequence: IWallSequence;

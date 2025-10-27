@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRoom } from '../store/RoomContext';
-import { INewWall, Unit } from '../types';
+import { INewWall, IPoint, Unit } from '../types';
 
 interface IWallCreationModalResult {
   isModalOpen: boolean;
@@ -9,6 +9,7 @@ interface IWallCreationModalResult {
   handleModalConfirm: (length: number, unit: Unit) => void;
   handleModalCancel: () => void;
   handleNewWallClick: (wallId: string, endpoint: 'start' | 'end', angle: number) => void;
+  openModalForNewWall: (startPoint: IPoint) => void;
 }
 
 export function useWallCreationModal(): IWallCreationModalResult {
@@ -19,6 +20,7 @@ export function useWallCreationModal(): IWallCreationModalResult {
     wallId: string;
     endpoint: 'start' | 'end';
   } | null>(null);
+  const [pendingWallStartPoint, setPendingWallStartPoint] = useState<IPoint | null>(null);
 
   useEffect(() => {
     const totalWalls =
@@ -38,11 +40,19 @@ export function useWallCreationModal(): IWallCreationModalResult {
       fromNode: pendingFromNode,
     };
 
-    dispatch({ type: 'ADD_WALL', payload: newWall });
+    if (pendingWallStartPoint) {
+      dispatch({
+        type: 'ADD_WALL',
+        payload: { wall: newWall, startPoint: pendingWallStartPoint },
+      });
+    } else {
+      dispatch({ type: 'ADD_WALL', payload: newWall });
+    }
 
     setIsModalOpen(false);
     setPendingWallAngle(0);
     setPendingFromNode(null);
+    setPendingWallStartPoint(null);
   }
 
   function handleModalCancel() {
@@ -52,12 +62,21 @@ export function useWallCreationModal(): IWallCreationModalResult {
       setIsModalOpen(false);
       setPendingWallAngle(0);
       setPendingFromNode(null);
+      setPendingWallStartPoint(null);
     }
   }
 
   function handleNewWallClick(wallId: string, endpoint: 'start' | 'end', angle: number) {
     setPendingWallAngle(angle);
     setPendingFromNode({ wallId, endpoint });
+    setPendingWallStartPoint(null);
+    setIsModalOpen(true);
+  }
+
+  function openModalForNewWall(startPoint: IPoint) {
+    setPendingWallAngle(0);
+    setPendingFromNode(null);
+    setPendingWallStartPoint(startPoint);
     setIsModalOpen(true);
   }
 
@@ -68,5 +87,6 @@ export function useWallCreationModal(): IWallCreationModalResult {
     handleModalConfirm,
     handleModalCancel,
     handleNewWallClick,
+    openModalForNewWall,
   };
 }
