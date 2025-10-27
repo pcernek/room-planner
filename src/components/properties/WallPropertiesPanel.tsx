@@ -47,6 +47,10 @@ export function WallPropertiesPanel({ wall, unit, isStandalone, onUpdate, onDele
             style={styles.input}
           />
         </div>
+        <div style={styles.propertyColumn}>
+          <label style={styles.label}>Angle ({unitLabel})</label>
+          <input type="number" step="any" value={wall.angle.toString()} style={styles.input} />
+        </div>
         {isStandalone && (
           <div style={styles.propertyColumn}>
             <label style={styles.label}>Angle (°)</label>

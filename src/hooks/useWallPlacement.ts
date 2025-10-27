@@ -3,6 +3,7 @@ import Konva from 'konva';
 import { IPoint, Unit } from '../types';
 import { fromPixels } from '../utils/canvas';
 import { distance } from '../utils/geometry';
+import { Angle } from '../utils/Angle';
 
 interface IViewport {
   offsetX: number;
@@ -20,6 +21,8 @@ interface IWallPlacementResult {
   wallStartPoint: IPoint | null;
   wallPreviewPoint: IPoint | null;
   fromWallInfo: IFromWallInfo | null;
+  isOverButton: boolean;
+  setIsOverButton: (isOver: boolean) => void;
   handleStageClick: (
     stage: Konva.Stage,
     viewport: IViewport,
@@ -36,9 +39,9 @@ interface IWallPlacementResult {
 }
 
 function snapAngleTo45Degrees(angleRadians: number): number {
-  const angleDegrees = (angleRadians * 180) / Math.PI;
-  const snapped = Math.round(angleDegrees / 45) * 45;
-  return (snapped * Math.PI) / 180;
+  const angle = Angle.radians(angleRadians);
+  const snapped = angle.snapTo(45);
+  return snapped.getRadians();
 }
 
 function calculateSnappedEndpoint(
@@ -51,21 +54,29 @@ function calculateSnappedEndpoint(
   const dy = mousePoint.y - start.y;
   const rawAngle = Math.atan2(dy, dx);
   const snappedAngle = snapAngleTo45Degrees(rawAngle);
-  const snappedAngleDegrees = (snappedAngle * 180) / Math.PI;
+  const snappedAngleDegrees = Angle.radians(snappedAngle);
 
-  if (sourceWallAngle !== undefined) {
-    const angleDifference = Math.abs(snappedAngleDegrees - sourceWallAngle);
-    let normalizedDiff = Math.min(angleDifference, 360 - angleDifference);
+  if (sourceWallAngle !== undefined && sourceEndpoint !== undefined) {
+    const sourceAngle = Angle.degrees(sourceWallAngle);
+
+    // Check if the new wall would extend the existing wall (same direction)
+    const isExtending = snappedAngleDegrees.equals(sourceAngle);
 
     if (sourceEndpoint === 'start') {
-      const oppositeAngleDiff = Math.abs(snappedAngleDegrees - (sourceWallAngle + 180));
-      const normalizedOppositeDiff = Math.min(oppositeAngleDiff, 360 - oppositeAngleDiff);
-      normalizedDiff = Math.min(normalizedDiff, normalizedOppositeDiff);
-    }
+      // When extending from start, backtracking means going in the same direction as the wall
+      // This is the same as extending, so we just need to check isExtending
+      const isBacktracking = isExtending;
 
-    const isBacktracking = normalizedDiff > 178;
-    if (isBacktracking) {
-      return start;
+      if (isBacktracking) {
+        return start;
+      }
+    } else {
+      // When extending from end, backtracking means going opposite to the wall direction
+      const isBacktracking = snappedAngleDegrees.equals(sourceAngle.opposite());
+
+      if (isBacktracking || isExtending) {
+        return start;
+      }
     }
   }
 
@@ -81,11 +92,13 @@ export function useWallPlacement(): IWallPlacementResult {
   const [wallStartPoint, setWallStartPoint] = useState<IPoint | null>(null);
   const [wallPreviewPoint, setWallPreviewPoint] = useState<IPoint | null>(null);
   const [fromWallInfo, setFromWallInfo] = useState<IFromWallInfo | null>(null);
+  const [isOverButton, setIsOverButton] = useState<boolean>(false);
 
   const reset = useCallback(() => {
     setWallStartPoint(null);
     setWallPreviewPoint(null);
     setFromWallInfo(null);
+    setIsOverButton(false);
   }, []);
 
   const startFromEndpoint = useCallback(
@@ -155,6 +168,8 @@ export function useWallPlacement(): IWallPlacementResult {
     wallStartPoint,
     wallPreviewPoint,
     fromWallInfo,
+    isOverButton,
+    setIsOverButton,
     handleStageClick,
     handleStageMouseMove,
     startFromEndpoint,

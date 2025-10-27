@@ -15,6 +15,8 @@ interface IProps {
   onClick: () => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
+  onButtonMouseEnter?: () => void;
+  onButtonMouseLeave?: () => void;
 }
 
 export function EndpointExtensionButton({
@@ -25,6 +27,8 @@ export function EndpointExtensionButton({
   onClick,
   onMouseEnter,
   onMouseLeave,
+  onButtonMouseEnter,
+  onButtonMouseLeave,
 }: IProps) {
   const pixelX = toPixels(x, unit);
   const pixelY = toPixels(y, unit);
@@ -42,6 +46,7 @@ export function EndpointExtensionButton({
       stage.container().style.cursor = 'pointer';
     }
     onMouseEnter();
+    onButtonMouseEnter?.();
   };
 
   const handleMouseLeave = (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -52,6 +57,7 @@ export function EndpointExtensionButton({
       stage.container().style.cursor = 'default';
     }
     onMouseLeave();
+    onButtonMouseLeave?.();
   };
 
   return (

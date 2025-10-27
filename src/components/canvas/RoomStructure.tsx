@@ -22,6 +22,8 @@ interface IProps {
   onWallSequenceDragStart: () => void;
   onWallSequenceDragEnd: (sequenceId: string, x: number, y: number) => void;
   isDragging: boolean;
+  onButtonMouseEnter?: () => void;
+  onButtonMouseLeave?: () => void;
 }
 
 export function RoomStructure({
@@ -38,6 +40,8 @@ export function RoomStructure({
   onWallSequenceDragStart,
   onWallSequenceDragEnd,
   isDragging,
+  onButtonMouseEnter,
+  onButtonMouseLeave,
 }: IProps) {
   const [hoveredWallId, setHoveredWallId] = useState<string | null>(null);
 
@@ -127,6 +131,8 @@ export function RoomStructure({
             onDragStart={onWallSequenceDragStart}
             onDragEnd={onWallSequenceDragEnd}
             isDragging={isDragging}
+            onButtonMouseEnter={onButtonMouseEnter}
+            onButtonMouseLeave={onButtonMouseLeave}
           />
         );
       })}

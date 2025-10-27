@@ -3,6 +3,7 @@ import Konva from 'konva';
 import { IDoor, IWallGeometry, Unit } from '../../types';
 import { toPixels, pointToPixels, fromPixels } from '../../utils/canvas';
 import { useHover } from '../../store/HoverContext';
+import { Angle } from '../../utils/Angle';
 
 const WALL_THICKNESS = 8;
 const DOOR_COLOR = '#000000';
@@ -54,8 +55,8 @@ export function Door({
   const doorStartPixels = pointToPixels(doorStart, unit);
   const doorEndPixels = pointToPixels(doorEnd, unit);
 
-  const wallAngle = Math.atan2(dy, dx);
-  const arcRotation = wallAngle * (180 / Math.PI);
+  const wallAngle = Angle.radians(Math.atan2(dy, dx));
+  const arcRotation = wallAngle.getDegrees();
   const arcAngle = 90;
 
   const scaleX = door.swapHinge ? -1 : 1;
@@ -64,7 +65,7 @@ export function Door({
   const arcPosition = door.swapHinge ? doorEndPixels : doorStartPixels;
 
   const doorWidthPixels = toPixels(width, unit);
-  const rectRotation = wallAngle * (180 / Math.PI);
+  const rectRotation = wallAngle.getDegrees();
 
   const handleMouseEnter = () => {
     setHover('door', door.id);

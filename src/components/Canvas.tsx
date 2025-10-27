@@ -19,12 +19,8 @@ import { useCursorEffect } from '../hooks/useCursorEffect';
 import { useWallCreationModal } from '../hooks/useWallCreationModal';
 import { useCanvasInteraction } from '../hooks/useCanvasInteraction';
 import { useEntitySelection } from '../hooks/useEntitySelection';
-import {
-  calculateWallGeometries,
-  distance,
-  radiansToDegrees,
-  willExtendWall,
-} from '../utils/geometry';
+import { calculateWallGeometries, distance } from '../utils/geometry';
+import { Angle } from '../utils/Angle';
 
 export function Canvas() {
   const { state, dispatch } = useRoom();
@@ -243,69 +239,23 @@ export function Canvas() {
         const dx = result.end.x - result.start.x;
         const dy = result.end.y - result.start.y;
         const angleRadians = Math.atan2(dy, dx);
-        const angleDegrees = radiansToDegrees(angleRadians);
+        const angleDegrees = Angle.radians(angleRadians).getDegrees();
 
         if (wallPlacement.fromWallInfo) {
-          const sourceWallSequence = state.room.wallSequences.find((seq) =>
-            seq.walls.some((w) => w.id === wallPlacement.fromWallInfo?.wallId)
-          );
-          const sourceWall = sourceWallSequence?.walls.find(
-            (w) => w.id === wallPlacement.fromWallInfo?.wallId
-          );
+          const newWall: INewWall = {
+            length: wallLength,
+            unit: state.room.unit,
+            angle: angleDegrees,
+            fromNode: {
+              wallId: wallPlacement.fromWallInfo.wallId,
+              endpoint: wallPlacement.fromWallInfo.endpoint,
+            },
+          };
 
-          if (sourceWall && sourceWallSequence) {
-            if (
-              willExtendWall(angleDegrees, sourceWall.angle, wallPlacement.fromWallInfo.endpoint)
-            ) {
-              if (wallPlacement.fromWallInfo.endpoint === 'start') {
-                const angleRad = (angleDegrees * Math.PI) / 180;
-                const offsetX = wallLength * Math.cos(angleRad);
-                const offsetY = wallLength * Math.sin(angleRad);
-
-                dispatch({
-                  type: 'UPDATE_WALL',
-                  payload: {
-                    id: sourceWall.id,
-                    updates: { length: sourceWall.length + wallLength },
-                  },
-                });
-
-                dispatch({
-                  type: 'UPDATE_WALL_SEQUENCE_POSITION',
-                  payload: {
-                    id: sourceWallSequence.id,
-                    position: {
-                      x: sourceWallSequence.position.x + offsetX,
-                      y: sourceWallSequence.position.y + offsetY,
-                    },
-                  },
-                });
-              } else {
-                dispatch({
-                  type: 'UPDATE_WALL',
-                  payload: {
-                    id: sourceWall.id,
-                    updates: { length: sourceWall.length + wallLength },
-                  },
-                });
-              }
-            } else {
-              const newWall: INewWall = {
-                length: wallLength,
-                unit: state.room.unit,
-                angle: angleDegrees,
-                fromNode: {
-                  wallId: wallPlacement.fromWallInfo.wallId,
-                  endpoint: wallPlacement.fromWallInfo.endpoint,
-                },
-              };
-
-              dispatch({
-                type: 'ADD_WALL',
-                payload: newWall,
-              });
-            }
-          }
+          dispatch({
+            type: 'ADD_WALL',
+            payload: newWall,
+          });
         } else {
           const newWall: INewWall = {
             length: wallLength,
@@ -389,16 +339,8 @@ export function Canvas() {
             <Layer>
               <WallPreviewLayer
                 wallStart={wallPlacement.wallStartPoint}
-                wallPreview={wallPlacement.wallPreviewPoint}
+                wallPreview={wallPlacement.isOverButton ? null : wallPlacement.wallPreviewPoint}
                 unit={room.unit}
-                fromWallInfo={wallPlacement.fromWallInfo}
-                sourceWall={
-                  wallPlacement.fromWallInfo
-                    ? room.wallSequences
-                      .flatMap((seq) => seq.walls)
-                      .find((wall) => wall.id === wallPlacement.fromWallInfo?.wallId)
-                    : undefined
-                }
               />
 
               <RoomStructure
@@ -415,6 +357,8 @@ export function Canvas() {
                 onWallSequenceDragStart={handleWallSequenceDragStart}
                 onWallSequenceDragEnd={handleWallSequenceDragEnd}
                 isDragging={canvasInteraction.isDragging}
+                onButtonMouseEnter={() => wallPlacement.setIsOverButton(true)}
+                onButtonMouseLeave={() => wallPlacement.setIsOverButton(false)}
               />
 
               {room.furniture.map((furniture) => (

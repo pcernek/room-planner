@@ -1,21 +1,12 @@
 import { Fragment } from 'react';
 import { Line, Circle, Text, Rect, Group } from 'react-konva';
-import { IPoint, Unit, IWall } from '../../types';
+import { IPoint, Unit } from '../../types';
 import { toPixels } from '../../utils/canvas';
-import { willExtendWall, radiansToDegrees } from '../../utils/geometry';
-
-interface IFromWallInfo {
-  wallId: string;
-  endpoint: 'start' | 'end';
-  wallAngle: number;
-}
 
 interface IWallPreviewLayerProps {
   wallStart: IPoint | null;
   wallPreview: IPoint | null;
   unit: Unit;
-  fromWallInfo: IFromWallInfo | null;
-  sourceWall: IWall | undefined;
 }
 
 function formatLength(length: number, unit: Unit): string {
@@ -32,13 +23,7 @@ function calculateDistance(p1: IPoint, p2: IPoint): number {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-export function WallPreviewLayer({
-  wallStart,
-  wallPreview,
-  unit,
-  fromWallInfo,
-  sourceWall,
-}: IWallPreviewLayerProps) {
+export function WallPreviewLayer({ wallStart, wallPreview, unit }: IWallPreviewLayerProps) {
   return (
     <Fragment>
       {wallStart && wallPreview && (
@@ -69,20 +54,7 @@ export function WallPreviewLayer({
 
             if (previewLength < 0.1) return null;
 
-            let displayLength = previewLength;
-
-            if (fromWallInfo && sourceWall) {
-              const dx = wallPreview.x - wallStart.x;
-              const dy = wallPreview.y - wallStart.y;
-              const angleRadians = Math.atan2(dy, dx);
-              const previewAngleDegrees = radiansToDegrees(angleRadians);
-
-              if (willExtendWall(previewAngleDegrees, sourceWall.angle, fromWallInfo.endpoint)) {
-                displayLength = sourceWall.length + previewLength;
-              }
-            }
-
-            const lengthText = formatLength(displayLength, unit);
+            const lengthText = formatLength(previewLength, unit);
             const midX = (wallStart.x + wallPreview.x) / 2;
             const midY = (wallStart.y + wallPreview.y) / 2;
             const pixelMidX = toPixels(midX, unit);

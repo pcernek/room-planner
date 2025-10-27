@@ -31,6 +31,8 @@ interface IProps {
   onDragStart: () => void;
   onDragEnd: (sequenceId: string, x: number, y: number) => void;
   isDragging: boolean;
+  onButtonMouseEnter?: () => void;
+  onButtonMouseLeave?: () => void;
 }
 
 export function WallSequence({
@@ -54,6 +56,8 @@ export function WallSequence({
   onDragStart,
   onDragEnd,
   isDragging,
+  onButtonMouseEnter,
+  onButtonMouseLeave,
 }: IProps) {
   const [isDraggingSequence, setIsDraggingSequence] = useState(false);
   const positionPixels = pointToPixels(sequence.position, unit);
@@ -131,6 +135,8 @@ export function WallSequence({
             onMouseEnter={() => onMouseEnter(geometry.id)}
             onMouseLeave={onMouseLeave}
             onNewWallClick={(endpoint) => onNewWallClick(geometry.id, endpoint)}
+            onButtonMouseEnter={onButtonMouseEnter}
+            onButtonMouseLeave={onButtonMouseLeave}
           />
         );
       })}

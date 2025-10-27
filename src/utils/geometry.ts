@@ -1,24 +1,5 @@
 import { IWall, IWallGeometry, IPoint, IWallSequence } from '../types';
-
-export function degreesToRadians(degrees: number): number {
-  return (degrees * Math.PI) / 180;
-}
-
-export function radiansToDegrees(radians: number): number {
-  return (radians * 180) / Math.PI;
-}
-
-export function normalizeAngle(angle: number): number {
-  let normalized = angle % 360;
-  if (normalized < 0) {
-    normalized += 360;
-  }
-  return normalized;
-}
-
-export function addAngles(angle1: number, angle2: number): number {
-  return normalizeAngle(angle1 + angle2);
-}
+import { Angle } from './Angle';
 
 export function calculateWallGeometries(
   wallSequences: IWallSequence[]
@@ -45,7 +26,7 @@ export function calculateWallGeometries(
       }
 
       const length = wall.length;
-      const angleRad = degreesToRadians(wall.angle);
+      const angleRad = Angle.degrees(wall.angle).getRadians();
       const endPoint: IPoint = {
         x: startPoint.x + length * Math.cos(angleRad),
         y: startPoint.y + length * Math.sin(angleRad),
@@ -102,22 +83,4 @@ export function distance(point1: IPoint, point2: IPoint): number {
   const dx = point2.x - point1.x;
   const dy = point2.y - point1.y;
   return Math.sqrt(dx * dx + dy * dy);
-}
-
-export function willExtendWall(
-  newWallAngle: number,
-  sourceWallAngle: number,
-  sourceEndpoint: 'start' | 'end',
-  angleTolerance: number = 2
-): boolean {
-  const angleDifference = Math.abs(newWallAngle - sourceWallAngle);
-  let normalizedDiff = Math.min(angleDifference, 360 - angleDifference);
-
-  if (sourceEndpoint === 'start') {
-    const oppositeAngleDiff = Math.abs(newWallAngle - (sourceWallAngle + 180));
-    const normalizedOppositeDiff = Math.min(oppositeAngleDiff, 360 - oppositeAngleDiff);
-    normalizedDiff = Math.min(normalizedDiff, normalizedOppositeDiff);
-  }
-
-  return normalizedDiff < angleTolerance;
 }

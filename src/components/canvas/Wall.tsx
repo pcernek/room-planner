@@ -21,6 +21,8 @@ interface IProps {
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   onNewWallClick: (endpoint: 'start' | 'end') => void;
+  onButtonMouseEnter?: () => void;
+  onButtonMouseLeave?: () => void;
 }
 
 export function Wall({
@@ -34,6 +36,8 @@ export function Wall({
   onMouseEnter,
   onMouseLeave,
   onNewWallClick,
+  onButtonMouseEnter,
+  onButtonMouseLeave,
 }: IProps) {
   const { setHover, clearHover } = useHover();
   const isActive = isSelected || isHovered;
@@ -75,6 +79,8 @@ export function Wall({
           onClick={() => onNewWallClick('start')}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
+          onButtonMouseEnter={onButtonMouseEnter}
+          onButtonMouseLeave={onButtonMouseLeave}
         />
       )}
 
@@ -87,6 +93,8 @@ export function Wall({
           onClick={() => onNewWallClick('end')}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
+          onButtonMouseEnter={onButtonMouseEnter}
+          onButtonMouseLeave={onButtonMouseLeave}
         />
       )}
     </Group>
