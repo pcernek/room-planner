@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useRoom } from '../store/RoomContext';
 import { useEditor } from '../store/EditorContext';
-import { INewDoor } from '../types';
 import { WallPropertiesPanel } from './properties/WallPropertiesPanel';
 import { DoorPropertiesPanel } from './properties/DoorPropertiesPanel';
 import { FurniturePropertiesPanel } from './properties/FurniturePropertiesPanel';
@@ -10,8 +9,6 @@ import { WallSequencePropertiesPanel } from './properties/WallSequenceProperties
 export function Sidebar() {
   const { state, dispatch } = useRoom();
   const { state: editorState, setActiveTool } = useEditor();
-  const [doorOffset, setDoorOffset] = useState('');
-  const [doorWidth, setDoorWidth] = useState('');
 
   if (!state.room) {
     return (
@@ -22,8 +19,6 @@ export function Sidebar() {
     );
   }
 
-  const unit = state.room.unit;
-  const unitLabel = unit === 'cm' ? 'cm' : 'in';
   const activeTool = editorState.activeTool;
 
   function handleToolToggle(tool: 'placeWall' | 'placeDoor' | 'placeFurniture') {
@@ -32,32 +27,6 @@ export function Sidebar() {
     } else {
       setActiveTool(tool);
     }
-  }
-
-  function handleAddDoor() {
-    if (!state.selectedEntityId || state.selectedEntityType !== 'wall') {
-      alert('Please select a wall first');
-      return;
-    }
-
-    const offsetValue = parseFloat(doorOffset);
-    const widthValue = parseFloat(doorWidth);
-
-    if (isNaN(offsetValue) || offsetValue <= 0 || isNaN(widthValue) || widthValue <= 0) {
-      alert(`Please enter valid dimensions in ${unitLabel}`);
-      return;
-    }
-
-    const newDoor: INewDoor = {
-      wallId: state.selectedEntityId,
-      offsetFromStart: offsetValue,
-      width: widthValue,
-      unit,
-    };
-
-    dispatch({ type: 'ADD_DOOR', payload: newDoor });
-    setDoorOffset('');
-    setDoorWidth('');
   }
 
   function handleDeleteSelected() {
@@ -194,28 +163,7 @@ export function Sidebar() {
           Add Door
         </button>
         {activeTool === 'placeDoor' && (
-          <>
-            <p style={styles.hint}>Select a wall first</p>
-            <input
-              type="number"
-              step="any"
-              placeholder={`Offset (${unitLabel})`}
-              value={doorOffset}
-              onChange={(e) => setDoorOffset(e.target.value)}
-              style={styles.input}
-            />
-            <input
-              type="number"
-              step="any"
-              placeholder={`Width (${unitLabel})`}
-              value={doorWidth}
-              onChange={(e) => setDoorWidth(e.target.value)}
-              style={styles.input}
-            />
-            <button onClick={handleAddDoor} style={styles.button}>
-              Add Door to Wall
-            </button>
-          </>
+          <p style={styles.hint}>Click on a wall to add a door to it</p>
         )}
       </div>
 

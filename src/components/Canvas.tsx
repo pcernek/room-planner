@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Stage, Layer } from 'react-konva';
 import Konva from 'konva';
 import { useRoom } from '../store/RoomContext';
 import { useEditor } from '../store/EditorContext';
-import { Unit } from '../types';
+import { Unit, INewDoor } from '../types';
 import { RoomStructure } from './canvas/RoomStructure';
 import { Furniture } from './canvas/Furniture';
 import { NewWallModal } from './NewWallModal';
@@ -11,10 +11,12 @@ import { RoomSetupModal } from './RoomSetupModal';
 import { PreviewLayer } from './canvas/PreviewLayer';
 import { useFurniturePlacement } from '../hooks/useFurniturePlacement';
 import { useWallPlacement } from '../hooks/useWallPlacement';
+import { useDoorPlacement } from '../hooks/useDoorPlacement';
 import { useCursorEffect } from '../hooks/useCursorEffect';
 import { useWallCreationModal } from '../hooks/useWallCreationModal';
 import { useCanvasInteraction } from '../hooks/useCanvasInteraction';
 import { useEntitySelection } from '../hooks/useEntitySelection';
+import { calculateWallGeometries } from '../utils/geometry';
 
 export function Canvas() {
   const { state, dispatch } = useRoom();
@@ -25,12 +27,18 @@ export function Canvas() {
 
   const furniturePlacement = useFurniturePlacement();
   const wallPlacement = useWallPlacement();
+  const doorPlacement = useDoorPlacement();
   const wallCreationModal = useWallCreationModal();
   const entitySelection = useEntitySelection();
   const canvasInteraction = useCanvasInteraction({
     viewport: editorState.viewport,
     setViewport,
   });
+
+  const wallGeometries = useMemo(
+    () => (state.room ? calculateWallGeometries(state.room.wallSequences) : new Map()),
+    [state.room]
+  );
 
   useEffect(() => {
     if (stageRef.current) {
@@ -68,6 +76,51 @@ export function Canvas() {
       wallPlacement.reset();
     }
   }, [editorState.activeTool, wallPlacement]);
+
+  function handleWallClickForDoorPlacement(
+    wallId: string,
+    e: Konva.KonvaEventObject<MouseEvent>,
+    isDragging: boolean
+  ) {
+    if (isDragging) return;
+
+    if (editorState.activeTool === 'placeDoor' && state.room) {
+      const wallGeometry = wallGeometries.get(wallId);
+      if (!wallGeometry) return;
+
+      const defaultWidth = doorPlacement.calculateDefaultDoorWidth(
+        wallGeometry.length,
+        state.room.unit
+      );
+
+      const newDoor: INewDoor = {
+        wallId,
+        offsetFromStart: 0,
+        width: defaultWidth,
+        unit: state.room.unit,
+      };
+
+      dispatch({ type: 'ADD_DOOR', payload: newDoor });
+      setActiveTool('select');
+      return;
+    }
+
+    entitySelection.handleWallClick(wallId, e, isDragging);
+  }
+
+  function handleDoorSelect(doorId: string) {
+    if (editorState.activeTool === 'placeDoor') {
+      setActiveTool('select');
+    }
+    entitySelection.selectDoor(doorId);
+  }
+
+  function handleFurnitureSelect(furnitureId: string) {
+    if (editorState.activeTool === 'placeDoor') {
+      setActiveTool('select');
+    }
+    entitySelection.selectFurniture(furnitureId);
+  }
 
   function handleFurnitureDragEnd(furnitureId: string, x: number, y: number) {
     furniturePlacement.handleFurnitureDragEnd();
@@ -136,6 +189,9 @@ export function Canvas() {
     }
 
     if (e.target === e.target.getStage()) {
+      if (editorState.activeTool === 'placeDoor') {
+        setActiveTool('select');
+      }
       entitySelection.clearSelection();
     }
   }
@@ -182,8 +238,8 @@ export function Canvas() {
               unit={room.unit}
               selectedEntityId={state.selectedEntityId}
               selectedEntityType={state.selectedEntityType}
-              onWallSelect={entitySelection.handleWallClick}
-              onDoorSelect={entitySelection.selectDoor}
+              onWallSelect={handleWallClickForDoorPlacement}
+              onDoorSelect={handleDoorSelect}
               onNewWallClick={wallCreationModal.handleNewWallClick}
               onWallSequenceDragStart={handleWallSequenceDragStart}
               onWallSequenceDragEnd={handleWallSequenceDragEnd}
@@ -199,7 +255,7 @@ export function Canvas() {
                   state.selectedEntityId === furniture.id &&
                   state.selectedEntityType === 'furniture'
                 }
-                onSelect={() => entitySelection.selectFurniture(furniture.id)}
+                onSelect={() => handleFurnitureSelect(furniture.id)}
                 onDragStart={furniturePlacement.handleFurnitureDragStart}
                 onDragEnd={(x, y) => handleFurnitureDragEnd(furniture.id, x, y)}
               />
