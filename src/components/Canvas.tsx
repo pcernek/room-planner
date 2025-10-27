@@ -32,6 +32,7 @@ export function Canvas() {
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [stageContainer, setStageContainer] = useState<HTMLDivElement | null>(null);
+  const [isDoorDragging, setIsDoorDragging] = useState(false);
 
   const furniturePlacement = useFurniturePlacement();
   const wallPlacement = useWallPlacement();
@@ -121,6 +122,21 @@ export function Canvas() {
       setActiveTool('select');
     }
     entitySelection.selectDoor(doorId);
+  }
+
+  function handleDoorDragStart() {
+    setIsDoorDragging(true);
+  }
+
+  function handleDoorDragEnd(doorId: string, newOffsetFromStart: number) {
+    setIsDoorDragging(false);
+    dispatch({
+      type: 'UPDATE_DOOR',
+      payload: {
+        id: doorId,
+        updates: { offsetFromStart: newOffsetFromStart },
+      },
+    });
   }
 
   function handleFurnitureSelect(furnitureId: string) {
@@ -344,6 +360,7 @@ export function Canvas() {
         height={editorState.canvasDimensions.height}
         draggable={
           !furniturePlacement.isFurnitureDragging &&
+          !isDoorDragging &&
           editorState.activeTool !== 'placeFurniture' &&
           editorState.activeTool !== 'placeWall' &&
           !wallPlacement.wallStartPoint
@@ -378,8 +395,8 @@ export function Canvas() {
                 sourceWall={
                   wallPlacement.fromWallInfo
                     ? room.wallSequences
-                        .flatMap((seq) => seq.walls)
-                        .find((wall) => wall.id === wallPlacement.fromWallInfo?.wallId)
+                      .flatMap((seq) => seq.walls)
+                      .find((wall) => wall.id === wallPlacement.fromWallInfo?.wallId)
                     : undefined
                 }
               />
@@ -392,6 +409,8 @@ export function Canvas() {
                 selectedEntityType={state.selectedEntityType}
                 onWallSelect={handleWallClickForDoorPlacement}
                 onDoorSelect={handleDoorSelect}
+                onDoorDragStart={handleDoorDragStart}
+                onDoorDragEnd={handleDoorDragEnd}
                 onNewWallClick={handleNewWallFromEndpoint}
                 onWallSequenceDragStart={handleWallSequenceDragStart}
                 onWallSequenceDragEnd={handleWallSequenceDragEnd}

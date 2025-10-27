@@ -1,6 +1,7 @@
-import { Arc, Rect } from 'react-konva';
+import { Arc, Rect, Group } from 'react-konva';
+import Konva from 'konva';
 import { IDoor, IWallGeometry, Unit } from '../../types';
-import { toPixels, pointToPixels } from '../../utils/canvas';
+import { toPixels, pointToPixels, fromPixels } from '../../utils/canvas';
 import { useHover } from '../../store/HoverContext';
 
 const WALL_THICKNESS = 8;
@@ -15,9 +16,19 @@ interface IProps {
   unit: Unit;
   isSelected: boolean;
   onSelect: () => void;
+  onDragStart: () => void;
+  onDragEnd: (newOffsetFromStart: number) => void;
 }
 
-export function Door({ door, wallGeometry, unit, isSelected, onSelect }: IProps) {
+export function Door({
+  door,
+  wallGeometry,
+  unit,
+  isSelected,
+  onSelect,
+  onDragStart,
+  onDragEnd,
+}: IProps) {
   const { setHover, clearHover } = useHover();
   const offset = door.offsetFromStart;
   const width = door.width;
@@ -63,11 +74,94 @@ export function Door({ door, wallGeometry, unit, isSelected, onSelect }: IProps)
     clearHover();
   };
 
+  const handleDragStart = (e: Konva.KonvaEventObject<DragEvent>) => {
+    e.cancelBubble = true;
+    const container = e.target.getStage()?.container();
+    if (container) container.style.cursor = 'grabbing';
+    onDragStart();
+  };
+
+  const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
+    e.cancelBubble = true;
+    const stage = e.target.getStage();
+    if (!stage) return;
+
+    const pointerPos = stage.getPointerPosition();
+    if (!pointerPos) return;
+
+    const scale = stage.scaleX();
+    const stagePos = stage.position();
+
+    const worldX = fromPixels((pointerPos.x - stagePos.x) / scale, unit);
+    const worldY = fromPixels((pointerPos.y - stagePos.y) / scale, unit);
+
+    const wallLengthSq = dx * dx + dy * dy;
+    const projectionT =
+      ((worldX - wallGeometry.startPoint.x) * dx + (worldY - wallGeometry.startPoint.y) * dy) /
+      wallLengthSq;
+    const clampedT = Math.max(0, Math.min(1, projectionT));
+
+    const newOffsetFromStart = clampedT * wallLength;
+    const clampedOffset = Math.max(0, Math.min(wallLength - width, newOffsetFromStart));
+
+    const newT = clampedOffset / wallLength;
+    const newDoorStart = {
+      x: wallGeometry.startPoint.x + newT * dx,
+      y: wallGeometry.startPoint.y + newT * dy,
+    };
+    const newDoorStartPixels = pointToPixels(newDoorStart, unit);
+
+    e.target.position({
+      x: newDoorStartPixels.x,
+      y: newDoorStartPixels.y,
+    });
+  };
+
+  const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
+    e.cancelBubble = true;
+    const container = e.target.getStage()?.container();
+    if (container) container.style.cursor = 'grab';
+
+    const stage = e.target.getStage();
+    if (!stage) return;
+
+    const pointerPos = stage.getPointerPosition();
+    if (!pointerPos) return;
+
+    const scale = stage.scaleX();
+    const stagePos = stage.position();
+
+    const worldX = fromPixels((pointerPos.x - stagePos.x) / scale, unit);
+    const worldY = fromPixels((pointerPos.y - stagePos.y) / scale, unit);
+
+    const wallLengthSq = dx * dx + dy * dy;
+    const projectionT =
+      ((worldX - wallGeometry.startPoint.x) * dx + (worldY - wallGeometry.startPoint.y) * dy) /
+      wallLengthSq;
+    const clampedT = Math.max(0, Math.min(1, projectionT));
+
+    const newOffsetFromStart = clampedT * wallLength;
+    const clampedOffset = Math.max(0, Math.min(wallLength - width, newOffsetFromStart));
+
+    onDragEnd(clampedOffset);
+  };
+
   return (
-    <>
+    <Group
+      x={doorStartPixels.x}
+      y={doorStartPixels.y}
+      draggable
+      onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
+      onDragEnd={handleDragEnd}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onClick={onSelect}
+      onTap={onSelect}
+    >
       <Arc
-        x={arcPosition.x}
-        y={arcPosition.y}
+        x={arcPosition.x - doorStartPixels.x}
+        y={arcPosition.y - doorStartPixels.y}
         innerRadius={0}
         outerRadius={doorWidthPixels}
         angle={arcAngle}
@@ -76,14 +170,10 @@ export function Door({ door, wallGeometry, unit, isSelected, onSelect }: IProps)
         scaleY={scaleY}
         stroke={isSelected ? SELECTION_COLOR : ARC_COLOR}
         strokeWidth={2}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClick={onSelect}
-        onTap={onSelect}
       />
       <Rect
-        x={doorStartPixels.x}
-        y={doorStartPixels.y}
+        x={0}
+        y={0}
         width={doorWidthPixels}
         height={WALL_THICKNESS}
         offsetY={WALL_THICKNESS / 2}
@@ -91,11 +181,7 @@ export function Door({ door, wallGeometry, unit, isSelected, onSelect }: IProps)
         fill={isSelected ? SELECTION_COLOR : DOOR_FILL}
         stroke={isSelected ? SELECTION_COLOR : DOOR_COLOR}
         strokeWidth={1}
-        onClick={onSelect}
-        onTap={onSelect}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
       />
-    </>
+    </Group>
   );
 }

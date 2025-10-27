@@ -23,6 +23,8 @@ interface IProps {
     isDragging: boolean
   ) => void;
   onDoorSelect: (doorId: string) => void;
+  onDoorDragStart: () => void;
+  onDoorDragEnd: (doorId: string, newOffsetFromStart: number) => void;
   onNewWallClick: (wallId: string, endpoint: 'start' | 'end') => void;
   onMouseEnter: (wallId: string) => void;
   onMouseLeave: () => void;
@@ -44,6 +46,8 @@ export function WallSequence({
   wallsWithFreeEnd,
   onWallSelect,
   onDoorSelect,
+  onDoorDragStart,
+  onDoorDragEnd,
   onNewWallClick,
   onMouseEnter,
   onMouseLeave,
@@ -155,6 +159,8 @@ export function WallSequence({
             unit={unit}
             isSelected={selectedEntityId === door.id && selectedEntityType === 'door'}
             onSelect={() => onDoorSelect(door.id)}
+            onDragStart={onDoorDragStart}
+            onDragEnd={(newOffsetFromStart) => onDoorDragEnd(door.id, newOffsetFromStart)}
           />
         );
       })}

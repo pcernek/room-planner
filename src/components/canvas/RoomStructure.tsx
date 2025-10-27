@@ -16,6 +16,8 @@ interface IProps {
     isDragging: boolean
   ) => void;
   onDoorSelect: (doorId: string) => void;
+  onDoorDragStart: () => void;
+  onDoorDragEnd: (doorId: string, newOffsetFromStart: number) => void;
   onNewWallClick: (wallId: string, endpoint: 'start' | 'end') => void;
   onWallSequenceDragStart: () => void;
   onWallSequenceDragEnd: (sequenceId: string, x: number, y: number) => void;
@@ -30,6 +32,8 @@ export function RoomStructure({
   selectedEntityType,
   onWallSelect,
   onDoorSelect,
+  onDoorDragStart,
+  onDoorDragEnd,
   onNewWallClick,
   onWallSequenceDragStart,
   onWallSequenceDragEnd,
@@ -115,6 +119,8 @@ export function RoomStructure({
             wallsWithFreeEnd={wallsWithFreeEndpoints[1]}
             onWallSelect={onWallSelect}
             onDoorSelect={onDoorSelect}
+            onDoorDragStart={onDoorDragStart}
+            onDoorDragEnd={onDoorDragEnd}
             onNewWallClick={onNewWallClick}
             onMouseEnter={(wallId) => setHoveredWallId(wallId)}
             onMouseLeave={() => setHoveredWallId(null)}
