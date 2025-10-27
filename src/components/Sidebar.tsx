@@ -5,6 +5,7 @@ import { INewDoor } from '../types';
 import { WallPropertiesPanel } from './properties/WallPropertiesPanel';
 import { DoorPropertiesPanel } from './properties/DoorPropertiesPanel';
 import { FurniturePropertiesPanel } from './properties/FurniturePropertiesPanel';
+import { WallSequencePropertiesPanel } from './properties/WallSequencePropertiesPanel';
 
 export function Sidebar() {
   const { state, dispatch } = useRoom();
@@ -96,8 +97,19 @@ export function Sidebar() {
   }
 
   function renderSelectedEntityPanel() {
-    if (!state.room || !state.selectedEntityId || !state.selectedEntityType) {
+    if (!state.room) {
       return <div style={styles.noSelection}>No entity selected</div>;
+    }
+
+    if (!state.selectedEntityId || !state.selectedEntityType) {
+      return <div style={styles.noSelection}>No entity selected</div>;
+    }
+
+    if (state.selectedEntityType === 'wallSequence') {
+      const sequence = state.room.wallSequences.find((s) => s.id === state.selectedEntityId);
+      if (!sequence) return null;
+
+      return <WallSequencePropertiesPanel sequence={sequence} />;
     }
 
     if (state.selectedEntityType === 'wall') {

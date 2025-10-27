@@ -28,7 +28,7 @@ export function WallPropertiesPanel({ wall, unit, isStandalone, onUpdate, onDele
 
   return (
     <div style={styles.propertyPanel}>
-      <h3 style={styles.panelTitle}>Wall Properties</h3>
+      <h3 style={styles.panelTitle}>Wall</h3>
       <div style={styles.propertyContent}>
         <div style={styles.propertyColumn}>
           <label style={styles.label}>Length ({unitLabel})</label>

@@ -10,7 +10,7 @@ interface IProps {
   doors: IDoor[];
   unit: Unit;
   selectedEntityId: string | null;
-  selectedEntityType: 'wall' | 'door' | 'furniture' | null;
+  selectedEntityType: 'wall' | 'door' | 'furniture' | 'wallSequence' | null;
   onWallSelect: (
     wallId: string,
     e: Konva.KonvaEventObject<MouseEvent>,
@@ -35,6 +35,16 @@ export function RoomStructure({
   const [hoveredWallId, setHoveredWallId] = useState<string | null>(null);
 
   const wallGeometries = useMemo(() => calculateWallGeometries(wallSequences), [wallSequences]);
+
+  const wallToSequenceMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const sequence of wallSequences) {
+      for (const wall of sequence.walls) {
+        map.set(wall.id, sequence.id);
+      }
+    }
+    return map;
+  }, [wallSequences]);
 
   const wallsWithFreeEndpoints = useMemo(() => {
     if (wallSequences.length === 0) {
@@ -93,23 +103,34 @@ export function RoomStructure({
 
   return (
     <>
-      {Array.from(wallGeometries.values()).map((geometry) => (
-        <Wall
-          key={geometry.id}
-          geometry={geometry}
-          unit={unit}
-          isSelected={
-            !hoveredWallId && selectedEntityId === geometry.id && selectedEntityType === 'wall'
-          }
-          isHovered={hoveredWallId === geometry.id}
-          hasStartFree={wallsWithFreeEndpoints[0].has(geometry.id)}
-          hasEndFree={wallsWithFreeEndpoints[1].has(geometry.id)}
-          onSelect={(e) => onWallSelect(geometry.id, e, isDragging)}
-          onMouseEnter={() => setHoveredWallId(geometry.id)}
-          onMouseLeave={() => setHoveredWallId(null)}
-          onNewWallClick={(endpoint, angle) => onNewWallClick(geometry.id, endpoint, angle)}
-        />
-      ))}
+      {Array.from(wallGeometries.values()).map((geometry) => {
+        const isPartOfSelectedSequence =
+          selectedEntityType === 'wallSequence' &&
+          wallToSequenceMap.get(geometry.id) === selectedEntityId;
+        const isIndividuallySelected =
+          !hoveredWallId && selectedEntityId === geometry.id && selectedEntityType === 'wall';
+        const isSelected = isIndividuallySelected || isPartOfSelectedSequence;
+
+        return (
+          <Wall
+            key={geometry.id}
+            geometry={geometry}
+            unit={unit}
+            isSelected={isSelected}
+            isHovered={hoveredWallId === geometry.id}
+            hasStartFree={
+              selectedEntityType !== 'wallSequence' && wallsWithFreeEndpoints[0].has(geometry.id)
+            }
+            hasEndFree={
+              selectedEntityType !== 'wallSequence' && wallsWithFreeEndpoints[1].has(geometry.id)
+            }
+            onSelect={(e) => onWallSelect(geometry.id, e, isDragging)}
+            onMouseEnter={() => setHoveredWallId(geometry.id)}
+            onMouseLeave={() => setHoveredWallId(null)}
+            onNewWallClick={(endpoint, angle) => onNewWallClick(geometry.id, endpoint, angle)}
+          />
+        );
+      })}
 
       {doors.map((door) => {
         const wallGeometry = wallGeometries.get(door.wallId);

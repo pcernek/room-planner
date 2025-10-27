@@ -51,7 +51,7 @@ export function DoorPropertiesPanel({ door, unit, onUpdate, onDelete }: IProps) 
 
   return (
     <div style={styles.propertyPanel}>
-      <h3 style={styles.panelTitle}>Door Properties</h3>
+      <h3 style={styles.panelTitle}>Door</h3>
       <div style={styles.propertyContent}>
         <div style={styles.propertyColumn}>
           <label style={styles.label}>Offset ({unitLabel})</label>

@@ -5,6 +5,7 @@ interface IEntitySelectionResult {
   selectWall: (wallId: string) => void;
   selectDoor: (doorId: string) => void;
   selectFurniture: (furnitureId: string) => void;
+  selectWallSequence: (sequenceId: string) => void;
   clearSelection: () => void;
   handleWallClick: (
     wallId: string,
@@ -14,7 +15,7 @@ interface IEntitySelectionResult {
 }
 
 export function useEntitySelection(): IEntitySelectionResult {
-  const { dispatch } = useRoom();
+  const { state, dispatch } = useRoom();
 
   function selectWall(wallId: string) {
     dispatch({
@@ -37,6 +38,13 @@ export function useEntitySelection(): IEntitySelectionResult {
     });
   }
 
+  function selectWallSequence(sequenceId: string) {
+    dispatch({
+      type: 'SET_SELECTED_ENTITY',
+      payload: { id: sequenceId, entityType: 'wallSequence' },
+    });
+  }
+
   function clearSelection() {
     dispatch({
       type: 'SET_SELECTED_ENTITY',
@@ -51,7 +59,18 @@ export function useEntitySelection(): IEntitySelectionResult {
   ) {
     e.cancelBubble = true;
     if (!isDragging) {
-      selectWall(wallId);
+      if (state.selectedEntityId === wallId && state.selectedEntityType === 'wall') {
+        if (state.room) {
+          for (const sequence of state.room.wallSequences) {
+            if (sequence.walls.some((wall) => wall.id === wallId)) {
+              selectWallSequence(sequence.id);
+              return;
+            }
+          }
+        }
+      } else {
+        selectWall(wallId);
+      }
     }
   }
 
@@ -59,6 +78,7 @@ export function useEntitySelection(): IEntitySelectionResult {
     selectWall,
     selectDoor,
     selectFurniture,
+    selectWallSequence,
     clearSelection,
     handleWallClick,
   };

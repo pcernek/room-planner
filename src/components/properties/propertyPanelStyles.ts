@@ -60,4 +60,19 @@ export const propertyPanelStyles: Record<string, React.CSSProperties> = {
     fontSize: '14px',
     cursor: 'pointer',
   },
+  info: {
+    marginBottom: '10px',
+  },
+  infoRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    padding: '5px 0',
+    fontSize: '14px',
+  },
+  hint: {
+    margin: '10px 0 0 0',
+    fontSize: '12px',
+    color: '#999',
+    fontStyle: 'italic',
+  },
 };

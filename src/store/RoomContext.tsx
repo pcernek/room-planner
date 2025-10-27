@@ -80,7 +80,7 @@ function loadRoomFromStorage(): IRoom | null {
 interface IRoomState {
   room: IRoom | null;
   selectedEntityId: string | null;
-  selectedEntityType: 'wall' | 'door' | 'furniture' | null;
+  selectedEntityType: 'wall' | 'door' | 'furniture' | 'wallSequence' | null;
 }
 
 type RoomAction =
@@ -96,9 +96,12 @@ type RoomAction =
   | { type: 'UPDATE_FURNITURE'; payload: { id: string; updates: Partial<IFurniture> } }
   | { type: 'DELETE_FURNITURE'; payload: string }
   | {
-    type: 'SET_SELECTED_ENTITY';
-    payload: { id: string | null; entityType: 'wall' | 'door' | 'furniture' | null };
-  }
+      type: 'SET_SELECTED_ENTITY';
+      payload: {
+        id: string | null;
+        entityType: 'wall' | 'door' | 'furniture' | 'wallSequence' | null;
+      };
+    }
   | { type: 'CLEAR_ROOM' };
 
 const initialState: IRoomState = {
@@ -243,6 +246,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
       if (!state.room) return state;
 
       const updatedSequences: IWallSequence[] = [];
+      let deletedFromSequenceId: string | null = null;
 
       for (const sequence of state.room.wallSequences) {
         const wallIndex = sequence.walls.findIndex((w) => w.id === action.payload);
@@ -251,6 +255,8 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
           updatedSequences.push(sequence);
           continue;
         }
+
+        deletedFromSequenceId = sequence.id;
 
         if (sequence.walls.length === 1) {
           continue;
@@ -309,11 +315,15 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
 
       const newDoors = state.room.doors.filter((door) => door.wallId !== action.payload);
 
+      const shouldClearSelection =
+        state.selectedEntityType === 'wallSequence' &&
+        state.selectedEntityId === deletedFromSequenceId;
+
       return {
         ...state,
         room: { ...state.room, wallSequences: updatedSequences, doors: newDoors },
-        selectedEntityId: null,
-        selectedEntityType: null,
+        selectedEntityId: shouldClearSelection ? null : state.selectedEntityId,
+        selectedEntityType: shouldClearSelection ? null : state.selectedEntityType,
       };
     }
 

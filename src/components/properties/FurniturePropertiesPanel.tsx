@@ -46,7 +46,7 @@ export function FurniturePropertiesPanel({ furniture, unit, onUpdate, onDelete }
 
   return (
     <div style={styles.propertyPanel}>
-      <h3 style={styles.panelTitle}>Furniture Properties</h3>
+      <h3 style={styles.panelTitle}>Furniture</h3>
       <div style={styles.propertyContent}>
         <div style={styles.propertyColumn}>
           <label style={styles.label}>Name</label>
