@@ -74,7 +74,7 @@ export function Toolbar() {
 
   function validateRoom(data: IRoom): boolean {
     if (!data || typeof data !== 'object') return false;
-    if (!Array.isArray(data.walls)) return false;
+    if (!Array.isArray(data.wallSequences)) return false;
     if (!Array.isArray(data.doors)) return false;
     if (!Array.isArray(data.furniture)) return false;
     return true;
@@ -92,12 +92,14 @@ export function Toolbar() {
     const BUFFER = 80;
     const { width, height } = editorState.canvasDimensions;
 
-    if (!state.room || state.room.walls.length === 0) {
+    const totalWalls =
+      state.room?.wallSequences.reduce((count, seq) => count + seq.walls.length, 0) || 0;
+    if (!state.room || totalWalls === 0) {
       setViewport({ offsetX: width / 2, offsetY: height / 2, scale: 1 });
       return;
     }
 
-    const wallGeometries = calculateWallGeometries(state.room.walls);
+    const wallGeometries = calculateWallGeometries(state.room.wallSequences);
     const boundingBox = calculateBoundingBox(wallGeometries, state.room);
     const viewport = calculateCenteredViewport(boundingBox, width, height, BUFFER, state.room.unit);
 
@@ -184,8 +186,8 @@ export function Toolbar() {
           <>
             <span style={styles.roomName}>{state.room.name}</span>
             <span style={styles.stats}>
-              Walls: {state.room.walls.length} | Doors: {state.room.doors.length} | Furniture:{' '}
-              {state.room.furniture.length}
+              Walls: {state.room.wallSequences.reduce((count, seq) => count + seq.walls.length, 0)}{' '}
+              | Doors: {state.room.doors.length} | Furniture: {state.room.furniture.length}
             </span>
           </>
         )}

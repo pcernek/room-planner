@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import Konva from 'konva';
-import { IWall, IDoor, Unit } from '../../types';
+import { IWallSequence, IDoor, Unit } from '../../types';
 import { calculateWallGeometries } from '../../utils/geometry';
 import { Wall } from './Wall';
 import { Door } from './Door';
 
 interface IProps {
-  walls: IWall[];
+  wallSequences: IWallSequence[];
   doors: IDoor[];
   unit: Unit;
   selectedEntityId: string | null;
@@ -22,7 +22,7 @@ interface IProps {
 }
 
 export function RoomStructure({
-  walls,
+  wallSequences,
   doors,
   unit,
   selectedEntityId,
@@ -34,10 +34,10 @@ export function RoomStructure({
 }: IProps) {
   const [hoveredWallId, setHoveredWallId] = useState<string | null>(null);
 
-  const wallGeometries = useMemo(() => calculateWallGeometries(walls), [walls]);
+  const wallGeometries = useMemo(() => calculateWallGeometries(wallSequences), [wallSequences]);
 
   const wallsWithFreeEndpoints = useMemo(() => {
-    if (walls.length === 0) {
+    if (wallSequences.length === 0) {
       return [new Set<string>(), new Set<string>()] as const;
     }
 
@@ -89,7 +89,7 @@ export function RoomStructure({
     }
 
     return [wallsWithFreeStart, wallsWithFreeEnd] as const;
-  }, [walls, wallGeometries]);
+  }, [wallSequences, wallGeometries]);
 
   return (
     <>

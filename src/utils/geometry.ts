@@ -1,4 +1,4 @@
-import { IWall, IWallGeometry, IPoint } from '../types';
+import { IWall, IWallGeometry, IPoint, IWallSequence } from '../types';
 
 export function degreesToRadians(degrees: number): number {
   return (degrees * Math.PI) / 180;
@@ -20,24 +20,45 @@ export function addAngles(angle1: number, angle2: number): number {
   return normalizeAngle(angle1 + angle2);
 }
 
-export function calculateWallGeometries(walls: IWall[]): Map<string, IWallGeometry> {
+export function calculateWallGeometries(
+  wallSequences: IWallSequence[]
+): Map<string, IWallGeometry> {
   const geometries = new Map<string, IWallGeometry>();
 
-  for (const wall of walls) {
-    const length = wall.length;
-    const angleRad = degreesToRadians(wall.angle);
-    const endPoint: IPoint = {
-      x: wall.startPoint.x + length * Math.cos(angleRad),
-      y: wall.startPoint.y + length * Math.sin(angleRad),
-    };
+  for (const sequence of wallSequences) {
+    const wallMap = new Map<string, IWall>();
+    for (const wall of sequence.walls) {
+      wallMap.set(wall.id, wall);
+    }
 
-    geometries.set(wall.id, {
-      id: wall.id,
-      startPoint: wall.startPoint,
-      endPoint,
-      angle: wall.angle,
-      length,
-    });
+    for (const wall of sequence.walls) {
+      let startPoint: IPoint;
+
+      if (wall.previousWallId === null) {
+        startPoint = sequence.position;
+      } else {
+        const previousGeometry = geometries.get(wall.previousWallId);
+        if (!previousGeometry) {
+          continue;
+        }
+        startPoint = previousGeometry.endPoint;
+      }
+
+      const length = wall.length;
+      const angleRad = degreesToRadians(wall.angle);
+      const endPoint: IPoint = {
+        x: startPoint.x + length * Math.cos(angleRad),
+        y: startPoint.y + length * Math.sin(angleRad),
+      };
+
+      geometries.set(wall.id, {
+        id: wall.id,
+        startPoint,
+        endPoint,
+        angle: wall.angle,
+        length,
+      });
+    }
   }
 
   return geometries;

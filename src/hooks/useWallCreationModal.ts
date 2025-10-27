@@ -21,12 +21,14 @@ export function useWallCreationModal(): IWallCreationModalResult {
   } | null>(null);
 
   useEffect(() => {
-    if (state.room && state.room.walls.length === 0 && !isModalOpen) {
+    const totalWalls =
+      state.room?.wallSequences.reduce((count, seq) => count + seq.walls.length, 0) || 0;
+    if (state.room && totalWalls === 0 && !isModalOpen) {
       setIsModalOpen(true);
       setPendingWallAngle(0);
       setPendingFromNode(null);
     }
-  }, [state.room?.walls.length, isModalOpen]);
+  }, [state.room?.wallSequences, isModalOpen]);
 
   function handleModalConfirm(length: number, unit: Unit) {
     const newWall: INewWall = {
@@ -44,7 +46,9 @@ export function useWallCreationModal(): IWallCreationModalResult {
   }
 
   function handleModalCancel() {
-    if (state.room && state.room.walls.length > 0) {
+    const totalWalls =
+      state.room?.wallSequences.reduce((count, seq) => count + seq.walls.length, 0) || 0;
+    if (state.room && totalWalls > 0) {
       setIsModalOpen(false);
       setPendingWallAngle(0);
       setPendingFromNode(null);

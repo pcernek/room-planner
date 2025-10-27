@@ -1,5 +1,15 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
-import { IRoom, IWall, IDoor, IFurniture, INewWall, INewDoor, INewFurniture, Unit } from '../types';
+import {
+  IRoom,
+  IWall,
+  IDoor,
+  IFurniture,
+  INewWall,
+  INewDoor,
+  INewFurniture,
+  Unit,
+  IWallSequence,
+} from '../types';
 import { newEntityId } from '../utils/id';
 
 const LOCAL_STORAGE_KEY = 'room-planner-state';
@@ -9,13 +19,7 @@ function loadRoomFromStorage(): IRoom | null {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (
-        parsed &&
-        typeof parsed === 'object' &&
-        Array.isArray(parsed.walls) &&
-        parsed.name &&
-        parsed.unit
-      ) {
+      if (parsed && typeof parsed === 'object' && parsed.name && parsed.unit) {
         if (Array.isArray(parsed.doors)) {
           parsed.doors = parsed.doors.map((door: IDoor) => ({
             ...door,
@@ -24,20 +28,23 @@ function loadRoomFromStorage(): IRoom | null {
           }));
         }
 
-        if (parsed.originWallId) {
+        if (Array.isArray(parsed.walls)) {
           let currentPoint = { x: 0, y: 0 };
-          const migratedWalls = parsed.walls.map(
-            (wall: IWall & { previousWallId?: string | null }) => {
-              const startPoint = currentPoint;
+          const walls: IWall[] = parsed.walls.map(
+            (wall: IWall & { startPoint?: { x: number; y: number } }, index: number) => {
+              if (wall.startPoint) {
+                currentPoint = wall.startPoint;
+              }
               const angleRad = (wall.angle * Math.PI) / 180;
-              currentPoint = {
+              const nextPoint = {
                 x: currentPoint.x + wall.length * Math.cos(angleRad),
                 y: currentPoint.y + wall.length * Math.sin(angleRad),
               };
+              currentPoint = nextPoint;
 
               return {
                 id: wall.id,
-                startPoint,
+                previousWallId: index === 0 ? null : parsed.walls[index - 1].id,
                 length: wall.length,
                 angle: wall.angle,
                 unit: wall.unit,
@@ -45,21 +52,19 @@ function loadRoomFromStorage(): IRoom | null {
             }
           );
 
-          const originGeometry = migratedWalls.find((w: IWall) => w.id === parsed.originWallId);
-          if (originGeometry) {
-            const offsetX = originGeometry.startPoint.x;
-            const offsetY = originGeometry.startPoint.y;
+          const sequence: IWallSequence = {
+            id: newEntityId(),
+            position: parsed.walls[0]?.startPoint || { x: 0, y: 0 },
+            walls,
+          };
 
-            migratedWalls.forEach((wall: IWall) => {
-              wall.startPoint = {
-                x: wall.startPoint.x - offsetX,
-                y: wall.startPoint.y - offsetY,
-              };
-            });
-          }
-
-          parsed.walls = migratedWalls;
+          parsed.wallSequences = [sequence];
+          delete parsed.walls;
           delete parsed.originWallId;
+        }
+
+        if (!parsed.wallSequences) {
+          parsed.wallSequences = [];
         }
 
         return parsed;
@@ -91,9 +96,9 @@ type RoomAction =
   | { type: 'UPDATE_FURNITURE'; payload: { id: string; updates: Partial<IFurniture> } }
   | { type: 'DELETE_FURNITURE'; payload: string }
   | {
-      type: 'SET_SELECTED_ENTITY';
-      payload: { id: string | null; entityType: 'wall' | 'door' | 'furniture' | null };
-    }
+    type: 'SET_SELECTED_ENTITY';
+    payload: { id: string | null; entityType: 'wall' | 'door' | 'furniture' | null };
+  }
   | { type: 'CLEAR_ROOM' };
 
 const initialState: IRoomState = {
@@ -113,7 +118,7 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
         room: {
           name: action.payload.name,
           unit: action.payload.unit,
-          walls: [],
+          wallSequences: [],
           doors: [],
           furniture: [],
         },
@@ -125,58 +130,188 @@ function roomReducer(state: IRoomState, action: RoomAction): IRoomState {
       const { fromNode, ...wallData } = action.payload;
       const newWallId = newEntityId();
 
-      let startPoint: { x: number; y: number };
-
       if (!fromNode) {
-        startPoint = { x: 0, y: 0 };
-      } else {
-        const sourceWall = state.room.walls.find((w) => w.id === fromNode.wallId);
-        if (!sourceWall) return state;
+        const newWall: IWall = {
+          id: newWallId,
+          previousWallId: null,
+          ...wallData,
+        };
 
-        const angleRad = (sourceWall.angle * Math.PI) / 180;
-        if (fromNode.endpoint === 'start') {
-          startPoint = sourceWall.startPoint;
+        const newSequence: IWallSequence = {
+          id: newEntityId(),
+          position: { x: 0, y: 0 },
+          walls: [newWall],
+        };
+
+        return {
+          ...state,
+          room: { ...state.room, wallSequences: [...state.room.wallSequences, newSequence] },
+          selectedEntityId: newWallId,
+          selectedEntityType: 'wall',
+        };
+      } else {
+        let targetSequence: IWallSequence | null = null;
+        let targetWall: IWall | null = null;
+
+        for (const sequence of state.room.wallSequences) {
+          const wall = sequence.walls.find((w) => w.id === fromNode.wallId);
+          if (wall) {
+            targetSequence = sequence;
+            targetWall = wall;
+            break;
+          }
+        }
+
+        if (!targetSequence || !targetWall) return state;
+
+        const newWall: IWall = {
+          id: newWallId,
+          previousWallId: null,
+          ...wallData,
+        };
+
+        let updatedSequence: IWallSequence;
+
+        if (fromNode.endpoint === 'end') {
+          newWall.previousWallId = fromNode.wallId;
+          const wallIndex = targetSequence.walls.findIndex((w) => w.id === fromNode.wallId);
+          const newWalls = [
+            ...targetSequence.walls.slice(0, wallIndex + 1),
+            newWall,
+            ...targetSequence.walls.slice(wallIndex + 1),
+          ];
+
+          const wallsToUpdate = newWalls.slice(wallIndex + 2);
+          wallsToUpdate.forEach((wall) => {
+            const prevIndex = newWalls.indexOf(wall) - 1;
+            if (prevIndex >= 0) {
+              wall.previousWallId = newWalls[prevIndex].id;
+            }
+          });
+
+          updatedSequence = {
+            ...targetSequence,
+            walls: newWalls,
+          };
         } else {
-          startPoint = {
-            x: sourceWall.startPoint.x + sourceWall.length * Math.cos(angleRad),
-            y: sourceWall.startPoint.y + sourceWall.length * Math.sin(angleRad),
+          const firstWall = targetSequence.walls[0];
+          firstWall.previousWallId = newWallId;
+
+          const reversedAngle = (newWall.angle + 180) % 360;
+          newWall.angle = reversedAngle;
+
+          const angleRad = (reversedAngle * Math.PI) / 180;
+          const newPosition = {
+            x: targetSequence.position.x - newWall.length * Math.cos(angleRad),
+            y: targetSequence.position.y - newWall.length * Math.sin(angleRad),
+          };
+
+          updatedSequence = {
+            ...targetSequence,
+            position: newPosition,
+            walls: [newWall, ...targetSequence.walls],
           };
         }
+
+        const updatedSequences = state.room.wallSequences.map((seq) =>
+          seq.id === targetSequence.id ? updatedSequence : seq
+        );
+
+        return {
+          ...state,
+          room: { ...state.room, wallSequences: updatedSequences },
+          selectedEntityId: newWallId,
+          selectedEntityType: 'wall',
+        };
       }
-
-      const newWall: IWall = {
-        id: newWallId,
-        startPoint,
-        ...wallData,
-      };
-
-      const updatedWalls = [...state.room.walls, newWall];
-
-      return {
-        ...state,
-        room: { ...state.room, walls: updatedWalls },
-        selectedEntityId: newWallId,
-        selectedEntityType: 'wall',
-      };
     }
 
     case 'UPDATE_WALL': {
       if (!state.room) return state;
-      const newWalls = state.room.walls.map((wall) =>
-        wall.id === action.payload.id ? { ...wall, ...action.payload.updates } : wall
-      );
-      return { ...state, room: { ...state.room, walls: newWalls } };
+
+      const updatedSequences = state.room.wallSequences.map((sequence) => ({
+        ...sequence,
+        walls: sequence.walls.map((wall) =>
+          wall.id === action.payload.id ? { ...wall, ...action.payload.updates } : wall
+        ),
+      }));
+
+      return { ...state, room: { ...state.room, wallSequences: updatedSequences } };
     }
 
     case 'DELETE_WALL': {
       if (!state.room) return state;
 
-      const newWalls = state.room.walls.filter((wall) => wall.id !== action.payload);
+      const updatedSequences: IWallSequence[] = [];
+
+      for (const sequence of state.room.wallSequences) {
+        const wallIndex = sequence.walls.findIndex((w) => w.id === action.payload);
+
+        if (wallIndex === -1) {
+          updatedSequences.push(sequence);
+          continue;
+        }
+
+        if (sequence.walls.length === 1) {
+          continue;
+        }
+
+        if (wallIndex === 0) {
+          const remainingWalls = sequence.walls.slice(1);
+          const newFirstWall = remainingWalls[0];
+          newFirstWall.previousWallId = null;
+
+          const angleRad = (sequence.walls[0].angle * Math.PI) / 180;
+          const newPosition = {
+            x: sequence.position.x + sequence.walls[0].length * Math.cos(angleRad),
+            y: sequence.position.y + sequence.walls[0].length * Math.sin(angleRad),
+          };
+
+          updatedSequences.push({
+            ...sequence,
+            position: newPosition,
+            walls: remainingWalls,
+          });
+        } else if (wallIndex === sequence.walls.length - 1) {
+          const remainingWalls = sequence.walls.slice(0, wallIndex);
+          updatedSequences.push({
+            ...sequence,
+            walls: remainingWalls,
+          });
+        } else {
+          const firstSequenceWalls = sequence.walls.slice(0, wallIndex);
+          const secondSequenceWalls = sequence.walls.slice(wallIndex + 1);
+
+          secondSequenceWalls[0].previousWallId = null;
+
+          let currentPoint = sequence.position;
+          for (let i = 0; i <= wallIndex; i++) {
+            const wall = sequence.walls[i];
+            const angleRad = (wall.angle * Math.PI) / 180;
+            currentPoint = {
+              x: currentPoint.x + wall.length * Math.cos(angleRad),
+              y: currentPoint.y + wall.length * Math.sin(angleRad),
+            };
+          }
+
+          updatedSequences.push({
+            ...sequence,
+            walls: firstSequenceWalls,
+          });
+
+          updatedSequences.push({
+            id: newEntityId(),
+            position: currentPoint,
+            walls: secondSequenceWalls,
+          });
+        }
+      }
+
       const newDoors = state.room.doors.filter((door) => door.wallId !== action.payload);
 
       return {
         ...state,
-        room: { ...state.room, walls: newWalls, doors: newDoors },
+        room: { ...state.room, wallSequences: updatedSequences, doors: newDoors },
         selectedEntityId: null,
         selectedEntityType: null,
       };

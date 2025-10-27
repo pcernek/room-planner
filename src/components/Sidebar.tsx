@@ -71,10 +71,7 @@ export function Sidebar() {
     dispatch({ type: 'SET_SELECTED_ENTITY', payload: { id: null, entityType: null } });
   }
 
-  function handleUpdateWall(
-    id: string,
-    updates: { length?: number; angle?: number; startPoint?: { x: number; y: number } }
-  ) {
+  function handleUpdateWall(id: string, updates: { length?: number; angle?: number }) {
     dispatch({
       type: 'UPDATE_WALL',
       payload: { id, updates },
@@ -104,10 +101,15 @@ export function Sidebar() {
     }
 
     if (state.selectedEntityType === 'wall') {
-      const wall = state.room.walls.find((w) => w.id === state.selectedEntityId);
+      let wall = null;
+      for (const sequence of state.room.wallSequences) {
+        wall = sequence.walls.find((w) => w.id === state.selectedEntityId);
+        if (wall) break;
+      }
       if (!wall) return null;
 
-      const isStandalone = state.room.walls.length === 1;
+      const isStandalone =
+        state.room.wallSequences.length === 1 && state.room.wallSequences[0].walls.length === 1;
 
       return (
         <WallPropertiesPanel

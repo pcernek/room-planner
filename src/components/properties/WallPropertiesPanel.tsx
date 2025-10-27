@@ -7,10 +7,7 @@ interface IProps {
   wall: IWall;
   unit: Unit;
   isStandalone: boolean;
-  onUpdate: (
-    id: string,
-    updates: { length?: number; angle?: number; startPoint?: { x: number; y: number } }
-  ) => void;
+  onUpdate: (id: string, updates: { length?: number; angle?: number }) => void;
   onDelete: () => void;
 }
 

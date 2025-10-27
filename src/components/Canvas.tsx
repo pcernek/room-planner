@@ -133,7 +133,7 @@ export function Canvas() {
         {room && (
           <Layer>
             <RoomStructure
-              walls={room.walls}
+              wallSequences={room.wallSequences}
               doors={room.doors}
               unit={room.unit}
               selectedEntityId={state.selectedEntityId}

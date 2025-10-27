@@ -2,7 +2,7 @@ export type Unit = 'cm' | 'ft-in';
 
 export interface IWall {
   id: string;
-  startPoint: IPoint;
+  previousWallId: string | null;
   length: number;
   angle: number;
   unit: Unit;
@@ -54,10 +54,16 @@ export interface INewFurniture {
   unit: Unit;
 }
 
+export interface IWallSequence {
+  id: string;
+  position: IPoint;
+  walls: IWall[];
+}
+
 export interface IRoom {
   name: string;
   unit: Unit;
-  walls: IWall[];
+  wallSequences: IWallSequence[];
   doors: IDoor[];
   furniture: IFurniture[];
 }
