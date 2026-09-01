@@ -1,28 +1,44 @@
-## room planner
+# Room Planner
 
-A web app to plan the layout of furniture in your home.
+A desktop-first, browser-based editor for drawing measured floor plans and arranging furniture.
 
-<img width="1564" height="1214" alt="image" src="https://github.com/user-attachments/assets/55d8104b-6f64-4933-a399-278092d77c66" />
+[Open the live app](https://room-planner.hal-incandenza13073.chatgpt.site)
 
+## Features
+
+- Draw disconnected walls or extend connected wall sequences.
+- Switch between centimetres and inches without changing physical dimensions.
+- Add, reposition, and edit doors and windows attached to walls.
+- Draw, name, resize, rotate, and move furniture.
+- Define named rooms from wall sequences and move a complete room as one unit.
+- Pan, zoom, and recenter an effectively unbounded grid canvas.
+- Persist the current plan and viewport in local browser storage.
+- Import and export plans as JSON.
 
 ## Development
 
+Requires Node.js 22.13 or newer.
+
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-## Build
+## Verification
 
 ```bash
-npm run build
+npm test
+npm run lint
 ```
 
-## Technical Notes
+`npm test` builds the production application and runs the geometry, data-integrity, and rendered-output tests.
 
-- React + TypeScript + Vite
-- Canvas-based rendering
-- Walls stored as linked list (origin at 0,0)
-- Mixed unit support (cm / feet+inches)
-- JSON import/export for persistence
+## Implementation
 
+- React 19 and TypeScript
+- Vinext and Vite
+- SVG-based interactive drawing canvas
+- Local-first persistence with JSON portability
+- Cloudflare Workers-compatible production output
+
+The application stores geometry internally in centimetres. Unit switching only converts displayed measurements, avoiding cumulative conversion drift.
