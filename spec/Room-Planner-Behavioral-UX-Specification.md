@@ -8,10 +8,10 @@ The document is normative: every described behavior is part of the product contr
 
 ## Navigation
 
-- **Product foundation:** [Product definition](#1-product-definition), [architecture and persistence](#2-highest-level-architecture-and-persistence-boundary), [object model](#3-product-vocabulary-and-object-relationships), [app shell](#4-application-shell-and-navigation), and [plan lifecycle](#5-plan-lifecycle)
-- **Editor behavior:** [Tool modes](#6-tool-modes-and-cancellation-rules), [canvas navigation](#7-canvas-navigation-and-visual-language), [walls](#8-wall-workflows), [doors and windows](#9-door-and-window-workflows), [furniture](#10-furniture-workflows), [selection precedence](#11-selection-and-interaction-precedence), and [property updates](#12-automatic-property-updates-and-validation)
-- **Data and platform behavior:** [File operations](#13-file-operations), [measurement conventions](#14-measurement-conventions), [input and responsiveness](#15-responsive-and-input-expectations), and [product boundaries](#16-intentional-product-boundaries-and-absent-capabilities)
-- **Implementation guidance:** [Acceptance scenarios](#17-acceptance-scenarios) and [delivery priorities](#18-delivery-priorities)
+- **Product foundation:** [Product definition](#1-product-definition), [experience principles](#11-experience-principles), [architecture and persistence](#2-highest-level-architecture-and-persistence-boundary), [object model](#3-product-vocabulary-and-object-relationships), [app shell](#4-application-shell-and-navigation), and [plan lifecycle](#5-plan-lifecycle)
+- **Editor behavior:** [Tool modes](#6-tool-modes-and-cancellation-rules), [canvas navigation](#7-canvas-navigation-and-visual-language), [walls](#8-wall-workflows), [rooms](#9-room-workflows), [doors and windows](#10-door-and-window-workflows), [furniture](#11-furniture-workflows), [selection precedence](#12-selection-and-interaction-precedence), and [property updates](#13-automatic-property-updates-and-validation)
+- **Data and platform behavior:** [File operations](#14-file-operations), [measurement conventions](#15-measurement-conventions), [input and responsiveness](#16-responsive-and-input-expectations), and [product boundaries](#17-intentional-product-boundaries-and-absent-capabilities)
+- **Validation:** [Acceptance scenarios](#18-acceptance-scenarios)
 
 ## 1. Product definition
 
@@ -29,11 +29,23 @@ The user can:
 - Pan and zoom an effectively unbounded grid canvas.
 - Select individual objects, inspect them, edit their properties, and delete them.
 - Select and move an entire connected group of walls, or Cmd/Ctrl-select several wall sequences to define or edit a room.
+- Undo and redo accepted plan edits made during the current editing session.
 - Rely on automatic local persistence between browser sessions.
 - Export the plan as JSON and import a previously exported plan.
 - Discard the current plan and start again.
 
 This is a schematic layout tool, not a 3D room designer, furniture catalog, architectural drafting system, or collaborative cloud product.
+
+### 1.1 Experience principles
+
+- **Direct manipulation first.** The canvas is the primary place to create, select, and move objects. The property card provides precise correction rather than replacing direct spatial interaction.
+- **Progressive disclosure.** Keep the persistent interface spare. Reveal controls, instructions, and properties when the user selects an object or enters a placement mode.
+- **Spatial relationships stay coherent.** Moving a wall sequence carries its openings; moving a room carries its member sequences and assigned furniture; directly moving furniture updates its room assignment predictably.
+- **Fast, reversible-feeling iteration.** Give immediate visual feedback while drawing and dragging, preserve accepted changes automatically, and reserve blocking confirmation for consequential whole-plan replacement or deletion.
+- **Schematic clarity over architectural precision.** Use familiar, legible two-dimensional symbols and measurements without implying that the plan is a construction drawing. Room interiors are intentionally approximate interaction regions.
+- **Calm functional visual language.** Use a restrained neutral canvas and subtle grid, readable labels, clear hover and selection accents, and unambiguous destructive styling. Avoid decoration that competes with the plan.
+- **Predictable corrections.** Constrain wall-bound objects to their host walls, clamp values that must remain in bounds, and retain manual correction controls for approximate cases.
+- **Desktop-first, accessible controls.** Optimize spatial editing for a pointer-capable desktop device while keeping conventional controls, dialogs, and forms clearly labeled and keyboard reachable.
 
 ## 2. Highest-level architecture and persistence boundary
 
@@ -41,8 +53,9 @@ This is a schematic layout tool, not a 3D room designer, furniture catalog, arch
 - It has no account system, server-side project store, or cloud synchronization.
 - The browser automatically retains the current plan and the current viewport locally.
 - There is only one active plan at a time; there is no project list.
-- Manual JSON export/import is the only portability and backup mechanism.
+- Manual JSON export/import provides portability and a durable backup mechanism.
 - Selection and the currently active editing tool are transient rather than durable project data.
+- Undo/redo history is transient and is not restored after a reload, import, or starting from scratch.
 
 Consequences that should be visible in the product experience:
 
@@ -91,7 +104,9 @@ The toolbar spans the top of the app and contains:
 
 - A **File** dropdown on the left.
 - The plan name in the center when a plan exists.
-- Zoom controls and **Recenter View** on the right.
+- **Undo** and **Redo**, zoom controls, and **Recenter View** on the right.
+
+Undo and Redo are disabled when unavailable. They use familiar keyboard shortcuts: Cmd+Z / Ctrl+Z for Undo, and Shift+Cmd+Z / Ctrl+Y for Redo.
 
 The File menu contains:
 
@@ -102,9 +117,15 @@ The File menu contains:
 
 The menu closes after choosing an action or clicking elsewhere.
 
+#### Undo and Redo
+
+Undo reverses the most recent accepted plan edit. Redo reapplies an edit that was undone. An accepted edit includes creation, deletion, dragging, property changes, room definition or membership changes, and plan-name changes. Selection changes, hovering, tool changes, viewport movement, and unfinished placement gestures are not history entries.
+
+An edit made after Undo clears the redo history. Importing a plan or starting from scratch clears both histories. Undo does not restore a plan replaced by import or removed by Start from Scratch; those actions use confirmation instead.
+
 ### 4.2 Left sidebar
 
-The sidebar is approximately 300 px wide, visually separate from the canvas, and headed **Room Planner**.
+The sidebar has a fixed, comfortably readable width, is visually separate from the canvas, and is headed **Room Planner**.
 
 When there is no plan, it says **Create a plan to start planning**.
 
@@ -117,15 +138,17 @@ When a plan exists, it presents four large tool buttons:
 
 An active tool button becomes darker and more emphatic. A short instruction appears beneath it. Clicking the already-active button toggles back to ordinary selection mode.
 
+Below the placement tools, show a contextual **Define Room** action. It is disabled until one or more eligible wall sequences are selected, and opens the same room-naming flow as **Create Room from Selection**. This makes room creation discoverable without treating it as another placement mode.
+
 ### 4.3 Canvas and property card
 
-The remaining area is an interactive white canvas over a light-blue grid. The canvas resizes with the available browser space.
+The remaining area is an interactive canvas over a subtle grid. The canvas resizes with the available browser space.
 
 When an entity, wall sequence, wall-sequence selection, or room is selected, a white floating contextual property card appears near the upper-right corner of the canvas. It overlays, rather than displacing, the drawing.
 
 The card's title and controls are determined entirely by the current selection. It presents only actions and editable or read-only properties relevant to that selection—for example, wall geometry for a wall, hinge and swing controls for a door, offset and width for a window, dimensions and room assignment for furniture, and grouping actions for selected wall sequences. Selecting a different object updates the existing card in place. Clearing the selection or deleting the selected object closes it.
 
-Modal overlays are used for initial plan setup and first-wall setup. They block interaction with the rest of the app.
+A modal overlay is used for initial plan setup. It blocks interaction with the rest of the app.
 
 ## 5. Plan lifecycle
 
@@ -137,23 +160,13 @@ Show a blocking **Create New Plan** modal with:
 - Placeholder text such as **e.g. Main Floor**.
 - A **Start Planning** submit button.
 
-The plan-name field receives initial focus. Leading and trailing whitespace is removed on submit. An empty or whitespace-only name is rejected with an alert: **Please enter a plan name**.
+The plan-name field receives initial focus. Leading and trailing whitespace is removed on submit. An empty or whitespace-only name is rejected with clear validation feedback.
 
 There is no way to dismiss this modal without creating or importing a plan.
 
-The chosen plan name is fixed for the life of that plan.
+### 5.2 Rename a plan
 
-### 5.2 Mandatory first wall
-
-Immediately after plan creation, show a second blocking modal titled **Length of the first wall (cm)**.
-
-It contains a numeric length field and **Create Wall**. This is a required step in creating a drawable plan.
-
-The entered length must be greater than zero. Invalid input produces **Please enter a valid length**.
-
-Creating the wall places a horizontal first wall at the plan's starting origin. It is immediately selected and its properties are shown.
-
-If the plan later reaches zero walls, the same first-wall requirement appears again.
+Clicking the plan name in the toolbar makes it editable in place. The user can commit a non-empty trimmed name with Enter or by moving focus away, or cancel the edit with Escape. Invalid names retain the prior plan name and receive clear validation feedback.
 
 ### 5.3 Resume an existing plan
 
@@ -167,28 +180,28 @@ Choosing **File → Start from Scratch** asks for confirmation:
 
 Cancel preserves the plan. Confirm removes the plan, all of its rooms and entities, and the selection, then returns to the Create New Plan modal.
 
-A newly created plan begins with the drawing origin centered at 100% zoom.
+A newly created plan begins as an empty canvas with its drawing origin centered at 100% zoom. The user adds the first wall with the ordinary **Add Wall** workflow.
 
 ## 6. Tool modes and cancellation rules
 
 | Mode | Entry | Main interaction | Normal completion | Cancellation or interruption |
 | --- | --- | --- | --- | --- |
 | Select | Default; or toggle off an active tool | Select and drag entities; pan empty canvas | Remains active | N/A |
-| Add Wall | Click **Add Wall** or a free-endpoint plus control | Two canvas clicks define a wall; moving between clicks previews it | Creates one wall and returns to Select | Click active button again; switch tools; or finish below minimum length |
-| Add Door | Click **Add Door** | Click a wall | Creates one door and returns to Select | Click active button again; click empty canvas; select a door or furniture item |
-| Add Window | Click **Add Window** | Click a wall | Creates one window and returns to Select | Click active button again; click empty canvas; select a door, window, or furniture item |
-| Add Furniture | Click **Add Furniture** | Two canvas clicks define opposite corners | Creates one item and returns to Select | Click active button again or switch tools |
+| Add Wall | Click **Add Wall** or a free-endpoint plus control | Two canvas clicks define a wall; moving between clicks previews it | Creates one wall and returns to Select | Click active button again, press Escape, switch tools, or finish below minimum length |
+| Add Door | Click **Add Door** | Click a wall | Creates one door and returns to Select | Click active button again, press Escape, click empty canvas, or select a door, window, or furniture item |
+| Add Window | Click **Add Window** | Click a wall | Creates one window and returns to Select | Click active button again, press Escape, click empty canvas, or select a door, window, or furniture item |
+| Add Furniture | Click **Add Furniture** | Two canvas clicks define opposite corners | Creates one item and returns to Select | Click active button again, press Escape, or switch tools |
 
-Changing away from Add Wall or Add Furniture clears any unfinished first point and preview.
+Changing away from Add Wall or Add Furniture clears any unfinished first point and preview. Escape cancels any unfinished placement gesture and returns to Select mode without changing the plan.
 
-The product does not provide a general keyboard Escape behavior, undo, or redo.
+When no placement gesture or inline edit is active, Escape clears the selection. Escape cancels an inline plan-name edit without changing the name. It never undoes an accepted change; use Undo for that.
 
 ## 7. Canvas navigation and visual language
 
 ### 7.1 Grid
 
 - Grid lines are spaced 25 cm apart.
-- Grid lines are light blue and extend throughout the visible canvas as the user pans.
+- Grid lines remain subtle and extend throughout the visible canvas as the user pans.
 - There are no rulers, coordinate labels, origin marker, or grid-snap behavior for furniture.
 
 ### 7.2 Panning
@@ -209,8 +222,7 @@ The default empty-canvas cursor suggests movement. Placement modes use a crossha
 
 The toolbar provides minus and plus buttons with a percentage display.
 
-- Minus divides the current scale by 1.2.
-- Plus multiplies it by 1.2.
+- Minus and plus change the zoom by a consistent, readily perceptible increment.
 - Zoom is constrained to 10%–500%.
 - The displayed percentage is rounded to a whole number.
 
@@ -226,15 +238,15 @@ Mouse-wheel or trackpad scrolling also zooms between the same limits. Wheel zoom
 
 ### 7.5 Selection and hover styling
 
-- Walls are dark gray when idle and coral/red when hovered or selected.
-- A selected wall group colors all of its walls as selected.
+- Walls have a neutral idle treatment and a clear accent treatment when hovered or selected.
+- A selected wall group gives all its walls the selected treatment.
 - A selected room highlights all of its member wall sequences and its label. Its effective interior receives a subtle translucent highlight.
 - A room that is the current automatic-assignment candidate during a furniture drag receives the same interior highlight without changing the selection.
-- Furniture is blue with white text; selection adds a coral/red outline.
-- Doors use a conventional rectangular opening/leaf plus a quarter-circle swing arc; selection turns the symbol coral/red.
-- Windows appear as a narrow opening across the wall with two parallel light-blue lines and no swing arc; selection turns the symbol coral/red.
-- Free wall endpoints expose circular blue-outlined **+** controls when their wall is hovered or individually selected.
-- Destructive buttons are red.
+- Furniture has a visually distinct fill and readable contrasting text; selection adds a clear outline.
+- Doors use a conventional rectangular opening/leaf plus a quarter-circle swing arc; selection uses the accent treatment.
+- Windows appear as a narrow opening across the wall with two parallel lines and no swing arc; selection uses the accent treatment.
+- Free wall endpoints expose clearly visible circular **+** controls when their wall is hovered or individually selected.
+- Destructive buttons use clear destructive styling.
 - Room labels are compact, readable badges positioned at the center of their calculated interiors. They remain horizontally readable regardless of surrounding wall angles.
 
 Clicking truly empty canvas in Select mode clears the selection and closes the property card.
@@ -246,8 +258,8 @@ Clicking truly empty canvas in Select mode clears the selection and closes the p
 1. Click **Add Wall**.
 2. The sidebar shows **Click on canvas to place a new wall** and the canvas cursor becomes a crosshair.
 3. Click the desired start point.
-4. A blue start marker appears.
-5. Move the pointer. Show a dashed blue preview wall, a blue endpoint marker, and a floating length label.
+4. A visible start marker appears.
+5. Move the pointer. Show a dashed preview wall, an endpoint marker, and a floating length label.
 6. Snap the preview direction to the nearest 45° increment.
 7. Click the desired endpoint.
 8. Create the wall as a new, independently movable wall sequence, select the wall, and return to Select mode.
@@ -288,7 +300,7 @@ The card contains:
 - An **Angle (°)** field.
 - **Delete Wall**.
 
-Valid length changes are greater than zero and apply automatically after a short pause of roughly 500 ms. Changing a wall's length moves all later segments in the same sequence because each segment begins where its predecessor ends.
+Valid length changes are applied automatically after a brief pause or when the field loses focus. Changing a wall's length moves all later segments in the same sequence because each segment begins where its predecessor ends.
 
 ### 8.4 Select and move a connected wall sequence
 
@@ -306,9 +318,39 @@ Even a sequence containing only one wall can be group-selected with the second c
 
 Holding Cmd on macOS or Ctrl on other platforms while clicking a wall sequence adds or removes that entire sequence from a wall-sequence multi-selection. Ordinary clicking replaces the current selection. Marquee selection is not provided.
 
-When one or more complete wall sequences are selected, the contextual property card provides the applicable room-membership actions described in section 8.5. Direct dragging of a multi-selection is not required; whole-room movement uses the room label.
+When one or more complete wall sequences are selected, the contextual property card provides the applicable room-membership actions described in section 9.1. Direct dragging of a multi-selection is not required; whole-room movement uses the room label.
 
-### 8.5 Define and edit a room
+### 8.5 Edit wall angle
+
+Display every wall angle in degrees. For a standalone wall that is not connected to another segment, the angle is editable. A valid numeric value applies automatically after a brief pause or when the field loses focus, and wraps using 360° arithmetic.
+
+For a wall within a connected sequence, display the angle as read-only so that editing one segment cannot silently break the sequence's joints. Connected geometry is primarily established through the snapped drawing gesture.
+
+Screen-direction conventions are:
+
+- 0° points right.
+- 90° points downward on the canvas.
+- ±180° points left.
+- −90° points upward.
+
+### 8.6 Delete a wall
+
+**Delete Wall** acts immediately without confirmation, clears the selection, and has topology-aware consequences:
+
+- If it is the sequence's only wall, remove the whole sequence.
+- If it is the first wall, the second wall becomes the first while the remaining visible geometry stays in place.
+- If it is the last wall, truncate the sequence.
+- If it is in the middle, split the remaining walls into two independently movable sequences, leaving a gap where the deleted wall was.
+- If the original sequence belongs to a room, any surviving sequences produced by deletion remain members of that room.
+- Delete every door attached to the deleted wall.
+- Delete every window attached to the deleted wall.
+- Keep doors on surviving walls attached to those walls.
+- Keep windows on surviving walls attached to those walls.
+- If deletion removes the last wall sequence in a room, dissolve that room and make its furniture Unassigned.
+
+## 9. Room workflows
+
+### 9.1 Define and edit a room
 
 To create a room:
 
@@ -346,50 +388,21 @@ Dragging a room label moves the complete room as one unit:
 
 Dragging an individual member wall sequence still moves only that sequence and its doors and windows. The room interior and label update to its new bounding box, while existing furniture membership remains unchanged.
 
-### 8.5 Edit wall angle
+## 10. Door and window workflows
 
-Display every wall angle in degrees. For a standalone wall that is not connected to another segment, the angle is editable. A valid numeric value applies after about 500 ms and wraps using 360° arithmetic.
-
-For a wall within a connected sequence, display the angle as read-only so that editing one segment cannot silently break the sequence's joints. Connected geometry is primarily established through the snapped drawing gesture.
-
-Screen-direction conventions are:
-
-- 0° points right.
-- 90° points downward on the canvas.
-- ±180° points left.
-- −90° points upward.
-
-### 8.6 Delete a wall
-
-**Delete Wall** acts immediately without confirmation, clears the selection, and has topology-aware consequences:
-
-- If it is the sequence's only wall, remove the whole sequence.
-- If it is the first wall, the second wall becomes the first while the remaining visible geometry stays in place.
-- If it is the last wall, truncate the sequence.
-- If it is in the middle, split the remaining walls into two independently movable sequences, leaving a gap where the deleted wall was.
-- If the original sequence belongs to a room, any surviving sequences produced by deletion remain members of that room.
-- Delete every door attached to the deleted wall.
-- Delete every window attached to the deleted wall.
-- Keep doors on surviving walls attached to those walls.
-- Keep windows on surviving walls attached to those walls.
-- If deletion removes the last wall sequence in a room, dissolve that room and make its furniture Unassigned.
-- If no walls remain anywhere in the plan, reopen the mandatory first-wall modal.
-
-## 9. Door and window workflows
-
-### 9.1 Add a door
+### 10.1 Add a door
 
 1. Click **Add Door**.
 2. The sidebar shows **Click on a wall to add a door to it**.
 3. Click the desired host wall.
-4. Create the door at offset zero—the wall's logical start—not at the exact click position.
+4. Create the door centered on the clicked position, clamped as necessary so its full width remains within the host wall.
 5. Select the new door and return to Select mode.
 
 Default width is the smaller of the wall length and 75 cm.
 
 Multiple doors may be placed on the same wall.
 
-### 9.2 Select and edit a door
+### 10.2 Select and edit a door
 
 Click a door to select it. The property card contains:
 
@@ -399,7 +412,7 @@ Click a door to select it. The property card contains:
 - **Reverse Swing**.
 - **Delete Door**.
 
-Offset accepts numbers greater than or equal to zero. Width accepts numbers greater than zero. The combination must keep the complete door opening within the host wall. Numeric changes apply after a short pause of roughly 500 ms.
+Offset accepts numbers greater than or equal to zero. Width accepts numbers greater than zero. The combination must keep the complete door opening within the host wall. Numeric changes apply automatically after a brief pause or when the field loses focus.
 
 **Swap Hinge** immediately moves the hinge between the two ends of the opening.
 
@@ -409,7 +422,7 @@ The two controls are independent, producing all four hinge/swing orientations.
 
 The door itself may also be clicked and dragged along the axis of its host wall to change its position, as described below.
 
-### 9.3 Drag a door along its wall
+### 10.3 Drag a door along its wall
 
 Clicking and dragging the door itself repositions it along the axis of its host wall, even if the door was not already selected and without first using a property field.
 
@@ -421,23 +434,23 @@ Clicking and dragging the door itself repositions it along the axis of its host 
 
 Dragging does not detach the door or move it to another wall.
 
-### 9.4 Delete a door
+### 10.4 Delete a door
 
 **Delete Door** acts immediately without confirmation, removes only that door, clears the selection, and closes the property card.
 
 Deleting the host wall also deletes the door automatically.
 
-### 9.5 Add a window
+### 10.5 Add a window
 
 1. Click **Add Window**.
 2. The sidebar shows **Click on a wall to add a window to it**.
 3. Click the desired host wall.
-4. Create the window at offset zero—the wall's logical start—not at the exact click position.
+4. Create the window centered on the clicked position, clamped as necessary so its full width remains within the host wall.
 5. Select the new window and return to Select mode.
 
 Default width is the smaller of the wall length and 100 cm. Multiple windows may be placed on the same wall, and doors and windows may coexist on a wall.
 
-### 9.6 Select and edit a window
+### 10.6 Select and edit a window
 
 Click a window to select it. The **Window** property card contains:
 
@@ -445,11 +458,11 @@ Click a window to select it. The **Window** property card contains:
 - **Width (cm)**.
 - **Delete Window**.
 
-Offset accepts numbers greater than or equal to zero. Width accepts numbers greater than zero. The combination must keep the complete window within the host wall. Numeric changes apply after a short pause of roughly 500 ms.
+Offset accepts numbers greater than or equal to zero. Width accepts numbers greater than zero. The combination must keep the complete window within the host wall. Numeric changes apply automatically after a brief pause or when the field loses focus.
 
 Windows have no hinge, swing direction, height, sill height, opening style, or other architectural properties. Their purpose is only to show where windows occur along walls in the two-dimensional plan.
 
-### 9.7 Drag a window along its wall
+### 10.7 Drag a window along its wall
 
 Clicking and dragging the window itself repositions it along the axis of its host wall, even if the window was not already selected.
 
@@ -461,21 +474,21 @@ Clicking and dragging the window itself repositions it along the axis of its hos
 
 Dragging does not detach the window or move it to another wall.
 
-### 9.8 Delete a window
+### 10.8 Delete a window
 
 **Delete Window** acts immediately without confirmation, removes only that window, clears the selection, and closes the property card.
 
 Deleting the host wall also deletes the window automatically.
 
-## 10. Furniture workflows
+## 11. Furniture workflows
 
-### 10.1 Draw furniture
+### 11.1 Draw furniture
 
 1. Click **Add Furniture**.
 2. The sidebar shows **Click on canvas to draw furniture bounding box**.
 3. Click the first corner.
-4. Show a blue start marker.
-5. As the pointer moves, show a dashed blue rectangle with a light translucent fill.
+4. Show a visible start marker.
+5. As the pointer moves, show a dashed rectangle with a light translucent fill.
 6. Click the opposite corner.
 7. Create a rectangular furniture item spanning those corners.
 8. Name it **New Furniture**, give it 0° rotation, automatically determine its room assignment from its center point, select it, and return to Select mode.
@@ -484,18 +497,18 @@ The gesture works in any drag direction; the item is normalized to a positive wi
 
 After creation, focus the Name field and select **New Furniture** so the user can immediately type a real name.
 
-### 10.2 Furniture rendering
+### 11.2 Furniture rendering
 
-- Render furniture as a solid blue rectangular footprint.
+- Render furniture as a solid, visually distinct rectangular footprint.
 - Center the item's position on its rectangle.
 - Rotate the rectangle around its center.
 - Display the item's name in white, centered over it.
 - Keep the text horizontally readable rather than rotating it with the rectangle.
-- Use a coral/red outline for selection.
+- Use the selection accent for selection.
 
 There is no furniture catalog or iconography; every item is a labeled rectangle.
 
-### 10.3 Select, edit, and move furniture
+### 11.3 Select, edit, and move furniture
 
 The Furniture property card contains:
 
@@ -506,7 +519,7 @@ The Furniture property card contains:
 - **Room**, offering **Unassigned** and every named room in the plan.
 - **Delete Furniture**.
 
-Name changes accept arbitrary text. Width and height must be greater than zero. Rotation accepts any number and wraps using 360° arithmetic. Changes apply automatically after a short pause of roughly 500 ms.
+Name changes accept arbitrary text. Width and height must be greater than zero. Rotation accepts any number and wraps using 360° arithmetic. Changes apply automatically after a brief pause or when the field loses focus.
 
 Furniture is directly draggable anywhere on the canvas. It does not snap to the grid, walls, or other furniture, and it does not participate in collision detection.
 
@@ -516,11 +529,11 @@ The **Room** field permits an explicit correction when overlapping or intentiona
 
 There are no on-canvas resize handles or rotation handles; sizing and rotation are property-card operations.
 
-### 10.4 Delete furniture
+### 11.4 Delete furniture
 
 **Delete Furniture** acts immediately without confirmation, removes the item, clears the selection, and closes the property card.
 
-## 11. Selection and interaction precedence
+## 12. Selection and interaction precedence
 
 - Ordinarily, exactly one entity, room, or wall sequence is selected.
 - Cmd-click on macOS and Ctrl-click elsewhere can add or remove complete wall sequences from a multi-selection for room definition and membership editing.
@@ -541,20 +554,20 @@ There are no on-canvas resize handles or rotation handles; sizing and rotation a
 
 The app does not support marquee selection, arbitrary mixed-object multi-selection, ad hoc furniture grouping, locking entities, layer ordering, duplication, copy/paste, or keyboard deletion.
 
-## 12. Automatic property updates and validation
+## 13. Automatic property updates and validation
 
 Property fields do not have Save or Apply buttons.
 
-- Valid changes apply automatically after approximately 500 ms without typing.
+- Valid changes apply automatically after a brief pause or when the field loses focus.
 - Empty, non-numeric, or out-of-range numeric values are not committed to the plan.
 - On leaving an invalid field, restore its last accepted value.
 - Changes to separate fields must be preserved independently, even when made in rapid succession.
 
-Modal validation uses blocking browser alerts. Import status also uses alerts. Ordinary successful drawing, dragging, editing, and local persistence do not show toasts.
+Validation and import failures provide clear blocking feedback. Ordinary successful drawing, dragging, editing, and local persistence do not interrupt the user with transient messages.
 
-## 13. File operations
+## 14. File operations
 
-### 13.1 Export JSON
+### 14.1 Export JSON
 
 **File → Export JSON** downloads a human-readable JSON representation of the current plan. The filename follows:
 
@@ -573,33 +586,34 @@ It does not preserve selection, active tool, unfinished placement gestures, or v
 
 Disable Export when no plan exists.
 
-### 13.2 Import JSON
+### 14.2 Import JSON
 
 **File → Import JSON** opens a file chooser restricted to `.json` files.
 
 For a valid room-plan file:
 
-- Replace the current plan without an additional confirmation.
+- If the current plan contains any entities, ask for confirmation before replacing it. Cancelling preserves the current plan and leaves the import unapplied.
+- If the current plan is empty, replace it without an additional confirmation.
 - Retain it locally as the new current plan.
 - Cancel any unfinished placement gesture, return to Select mode, and clear the selection.
-- Show **Room plan imported successfully**.
+- Confirm that the plan was imported successfully.
 
-For parseable JSON that does not resemble a room plan, show **Invalid room plan file**.
+For parseable JSON that does not resemble a room plan, provide clear invalid-file feedback.
 
-For invalid JSON, show **Failed to import room plan: Invalid JSON**.
+For invalid JSON, provide clear invalid-JSON feedback.
 
 Reject files containing invalid entity values or broken relationships rather than partially importing them. Room interiors are recalculated from imported wall geometry rather than treated as authoritative saved geometry.
 
 Import does not automatically recenter the view. The user can choose **Recenter View** afterward.
 
-### 13.3 Confirmation behavior
+### 14.3 Confirmation behavior
 
 - Starting from scratch requires confirmation.
-- Importing over the current plan does not require confirmation.
+- Importing over a non-empty current plan requires confirmation.
 - Deleting individual walls, doors, windows, and furniture does not require confirmation.
-- There is no undo, so manual export is the only recovery path after destructive changes have been persisted.
+- Undo restores individual accepted plan edits made during the current editing session. Manual export remains the durable recovery path across sessions.
 
-## 14. Measurement conventions
+## 15. Measurement conventions
 
 All linear dimensions, offsets, positions, and grid intervals are measured and displayed in centimeters. The app has no unit selector or alternative unit mode.
 
@@ -611,21 +625,20 @@ All linear dimensions, offsets, positions, and grid intervals are measured and d
 - Minimum drawn wall length is 1 cm.
 - Angular measurements and rotations use degrees, shown with `°`.
 
-## 15. Responsive and input expectations
+## 16. Responsive and input expectations
 
 - The layout is desktop-first: fixed top toolbar, fixed-width sidebar, large canvas, and floating property card.
 - The canvas responds to browser resizing.
 - Core canvas entities recognize both click and tap events, but the surrounding layout is not optimized for a narrow phone viewport.
 - Dragging, wheel/trackpad zoom, and precise canvas placement assume a pointer-capable device.
-- There is no dedicated accessibility or keyboard-navigation workflow for canvas entities.
+- Toolbar controls, sidebar controls, modal dialogs, and property fields support ordinary keyboard focus, clear labels, and accessible names. Full keyboard manipulation of canvas geometry is not required.
 
-## 16. Intentional product boundaries and absent capabilities
+## 17. Intentional product boundaries and absent capabilities
 
 The following capabilities are outside the product's scope unless explicitly added:
 
 - Multiple saved plans or a project browser.
 - Accounts, cloud sync, sharing, or collaboration.
-- Undo/redo or change history.
 - 3D rendering or elevation views.
 - Stairs, columns, plumbing, or other architectural objects beyond walls, doors, and reference windows.
 - Wall thickness, height, materials, or finishes as editable properties.
@@ -641,7 +654,7 @@ The following capabilities are outside the product's scope unless explicitly add
 - Print layout.
 - Independent repositioning of room labels; labels serve as whole-room drag handles.
 
-## 17. Acceptance scenarios
+## 18. Acceptance scenarios
 
 The following scenarios provide a compact functional test suite.
 
@@ -649,8 +662,8 @@ The following scenarios provide a compact functional test suite.
 
 1. Open with no saved plan.
 2. Enter `Main Floor` and submit.
-3. Enter a 400 cm first wall.
-4. Verify a horizontal selected wall and the plan name.
+3. Verify an empty centered canvas and the plan name.
+4. Use **Add Wall** to draw a horizontal wall; verify it is selected.
 5. Reload and verify the plan returns.
 
 ### Scenario B — Draw and select walls
@@ -671,7 +684,7 @@ The following scenarios provide a compact functional test suite.
 ### Scenario D — Add and manipulate a door
 
 1. Enter Add Door mode and click a long wall near its middle.
-2. Verify the door is created at the wall's start with width 75 cm.
+2. Verify the 75 cm door is centered at the click position, subject to end-of-wall clamping.
 3. Click and drag the door itself toward the far end; verify it moves only along the wall's axis and remains fully within the wall.
 4. Exercise Swap Hinge and Reverse Swing to reach four orientations.
 5. Delete the host wall and verify the door disappears.
@@ -700,8 +713,10 @@ The following scenarios provide a compact functional test suite.
 2. Export JSON.
 3. Start from scratch and create a throwaway plan.
 4. Import the exported file.
-5. Verify plan and room names, geometry, room memberships, door relationships/orientations, window relationships, and furniture return.
-6. Verify selection and viewport are not part of the imported plan data.
+5. Verify that replacement confirmation appears; cancel it and verify the throwaway plan remains.
+6. Import again and confirm replacement.
+7. Verify plan and room names, geometry, room memberships, door relationships/orientations, window relationships, and furniture return.
+8. Verify selection, viewport, and prior undo/redo history are not part of the imported plan data.
 
 ### Scenario H — Tool cancellation
 
@@ -709,13 +724,14 @@ The following scenarios provide a compact functional test suite.
 2. Start drawing furniture, toggle Add Furniture off, and verify the preview clears.
 3. Enter Add Door and click empty canvas; verify the tool exits and selection clears.
 4. Enter Add Window and click empty canvas; verify the tool exits and selection clears.
-5. Finish a wall below the minimum length; verify nothing is created and Select mode resumes.
+5. Start a wall or furniture gesture, press Escape, and verify the preview clears without creating anything.
+6. Finish a wall below the minimum length; verify nothing is created and Select mode resumes.
 
 ### Scenario I — Define and move a room
 
 1. Draw two disconnected wall sequences without closing either sequence into a loop.
 2. Select the first sequence, then Cmd/Ctrl-click the second.
-3. Choose **Create Room from Selection**, name it `Living Room`, and verify a centered label and rectangular interior highlight.
+3. Verify **Define Room** becomes enabled, choose it, name the room `Living Room`, and verify a centered label and rectangular interior highlight.
 4. Verify the room interior is the smallest axis-aligned bounding box containing both sequences.
 5. Add a door and a window to member walls, and add furniture inside the room interior.
 6. Drag the room label and verify both sequences, the door, the window, the assigned furniture, and the label move by the same displacement.
@@ -733,25 +749,18 @@ The following scenarios provide a compact functional test suite.
 ### Scenario K — Add and manipulate a window
 
 1. Enter Add Window mode and click a wall longer than 100 cm.
-2. Verify a 100 cm window is created at the wall's logical start and rendered without a hinge or swing arc.
+2. Verify a 100 cm window is centered at the click position and rendered without a hinge or swing arc.
 3. Click and drag the window itself; verify it moves only along the wall's axis and remains fully within the wall.
 4. Edit its offset and width and verify both changes apply.
 5. Move the wall sequence and verify the window follows its host wall.
 6. Delete the host wall and verify the window disappears.
 
-## 18. Delivery priorities
+### Scenario L — Undo and redo
 
-If implementation must be staged, prioritize the work in this order:
-
-1. Plan setup, local resume, and first-wall creation.
-2. Canvas pan/zoom/grid and selection model.
-3. Wall drawing, snapping, sequences, group movement, and topology-aware deletion.
-4. Door and window attachment, axis-constrained dragging, editing, and host-wall deletion; plus door hinge and swing controls.
-5. Furniture drawing, editing, rotation, dragging, and deletion.
-6. Room definition from wall sequences, labels, calculated interiors, and whole-room movement.
-7. Automatic furniture assignment, reassignment highlighting, overlap rules, and manual correction.
-8. Toolbar, recentering, and property-card polish.
-9. JSON round-trip and start-from-scratch behavior.
-10. Validation, edge cases, responsive behavior, and accessibility refinement.
+1. Draw a wall, add a door, and move the door along its wall.
+2. Undo repeatedly and verify the movement, door creation, and wall creation are reversed one accepted edit at a time.
+3. Redo those edits and verify they are restored in order.
+4. Undo once, then make a different edit; verify Redo becomes unavailable.
+5. Start from scratch or import a different plan and verify the prior undo/redo history is unavailable.
 
 The essential product character is a low-friction visual editor: create geometry directly on the canvas, make precise corrections in a small contextual property card, and have every accepted change persist locally without an explicit save workflow.
